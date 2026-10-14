@@ -1,0 +1,2332 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>臺中市潭子區新興國民小學 115學年度課表與教務管理系統</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', '"Fredoka"', 'sans-serif'],
+                        cute: ['"Fredoka"', '"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .role-teacher .admin-only { display: none !important; }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .tab-active {
+            background-color: #0284c7 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px -2px rgba(2, 132, 199, 0.4);
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.25s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .card-box { border: 1px solid #ccc !important; box-shadow: none !important; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="role-teacher min-h-screen flex flex-col antialiased selection:bg-sky-500 selection:text-white">
+
+    <header class="bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-500 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row justify-between items-center gap-3">
+            
+            <!-- School Brand Info -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/95 p-2 rounded-2xl shadow-md text-sky-700 flex items-center justify-center">
+                    <i data-lucide="school" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-sky-800/60 text-sky-100 text-[11px] font-bold px-2.5 py-0.5 rounded-full tracking-wider border border-white/20">115 學年度</span>
+                        <span class="text-xs text-sky-100 font-medium">臺中市潭子區</span>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white font-cute drop-shadow-sm">新興國民小學 智慧課表與教務管理系統</h1>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button id="roleBadge" onclick="onRoleBadgeClick()" class="flex items-center space-x-1.5 bg-white/15 hover:bg-white/25 active:scale-95 transition backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold" title="目前身分"></button>
+
+                <button onclick="toggleLanguage()" class="flex items-center space-x-1.5 bg-white/15 hover:bg-white/25 active:scale-95 transition backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold">
+                    <i data-lucide="languages" class="w-4 h-4"></i>
+                    <span id="langText">中/英 雙語對照</span>
+                </button>
+
+                <div class="dropdown relative inline-block text-left">
+                    <button onclick="toggleDataMenu()" class="flex items-center space-x-1.5 bg-white/15 hover:bg-white/25 active:scale-95 transition backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-semibold">
+                        <i data-lucide="database" class="w-4 h-4"></i>
+                        <span>資料備份/重置</span>
+                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 opacity-80"></i>
+                    </button>
+                    <div id="dataMenu" class="hidden absolute right-0 mt-2 w-52 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden py-1">
+                        <button onclick="exportDataJSON()" class="w-full text-left px-4 py-2 text-xs font-medium hover:bg-slate-50 flex items-center space-x-2">
+                            <i data-lucide="download" class="w-3.5 h-3.5 text-sky-600"></i>
+                            <span>匯出 JSON 備份檔</span>
+                        </button>
+                        <label class="admin-only w-full text-left px-4 py-2 text-xs font-medium hover:bg-slate-50 flex items-center space-x-2 cursor-pointer">
+                            <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-600"></i>
+                            <span>匯入 JSON 備份檔</span>
+                            <input type="file" id="importJsonInput" onchange="importDataJSON(event)" accept=".json" class="hidden">
+                        </label>
+                        <div class="admin-only border-t border-slate-100 my-1"></div>
+                        <button onclick="clearAllSchedules()" class="admin-only w-full text-left px-4 py-2 text-xs font-medium hover:bg-rose-50 text-rose-600 flex items-center space-x-2">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>一鍵清空全校課程與教師</span>
+                        </button>
+                        <button onclick="resetToDefaultData()" class="admin-only w-full text-left px-4 py-2 text-xs font-medium hover:bg-slate-50 text-slate-600 flex items-center space-x-2">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>載入 115 學年度官方標準課表</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl text-xs flex flex-col text-right border border-white/10">
+                    <span class="text-[10px] text-sky-100 font-medium">即時時間/節次</span>
+                    <span id="currentPeriodBadge" class="font-bold text-yellow-200">讀取中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto space-x-2 py-2 border-t border-white/20 text-xs sm:text-sm font-semibold">
+            <button onclick="switchTab('classes')" id="tab-classes" class="tab-btn px-4 py-2 rounded-xl flex items-center space-x-2 transition whitespace-nowrap tab-active">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                <span>全校班級課表</span>
+            </button>
+            <button onclick="switchTab('subject-teachers')" id="tab-subject-teachers" class="tab-btn px-4 py-2 rounded-xl flex items-center space-x-2 transition whitespace-nowrap bg-white/10 hover:bg-white/20 text-white">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>科任空堂矩陣與熱門時段</span>
+            </button>
+            <button onclick="switchTab('substitute')" id="tab-substitute" class="tab-btn px-4 py-2 rounded-xl flex items-center space-x-2 transition whitespace-nowrap bg-white/10 hover:bg-white/20 text-white">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+                <span>代課登錄與派課單</span>
+            </button>
+            <button onclick="switchTab('swap')" id="tab-swap" class="tab-btn px-4 py-2 rounded-xl flex items-center space-x-2 transition whitespace-nowrap bg-white/10 hover:bg-white/20 text-white">
+                <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                <span>雙向調課申請系統</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- Toast Notification Area -->
+        <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+        <!-- SECTION 1: 全校班級課表 -->
+        <section id="sec-classes" class="tab-content block space-y-5 animate-fade-in">
+            <!-- Class Selector Card -->
+            <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2">
+                        <i data-lucide="book-open" class="text-sky-500 w-5 h-5"></i>
+                        <span>班級/導師課表查詢與即時編輯</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">點擊班級切換檢視；<b>點擊課表單元格</b>可開啟編輯視窗。帶有 <span class="text-amber-600 font-bold">★</span> 記號為跨班/特教課程綁定</p>
+                </div>
+                
+                <!-- Class Selection Pills -->
+                <div id="classSelectorList" class="flex flex-wrap gap-1.5 w-full md:w-auto">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Schedule Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden card-box">
+                <div class="bg-sky-50/80 px-5 py-3.5 border-b border-sky-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex items-center space-x-3">
+                        <span id="selectedClassBadge" class="bg-sky-600 text-white font-black text-lg px-3.5 py-1 rounded-xl shadow-sm">一甲</span>
+                        <div>
+                            <span class="text-[11px] text-slate-500 font-medium block">導師 / Homeroom Teacher</span>
+                            <span id="selectedClassHomeroom" class="font-bold text-slate-800 text-base">張淑冠 老師</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 no-print">
+                        <span class="text-xs text-slate-500 flex items-center space-x-1">
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-sky-500"></i>
+                            <span>點擊格子即可編輯</span>
+                        </span>
+                        <button onclick="clearCurrentClassSchedule()" class="admin-only flex items-center space-x-1 text-xs bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-xl shadow-xs font-semibold transition">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>清空本班課表</span>
+                        </button>
+                        <button onclick="window.print()" class="flex items-center space-x-1 text-xs bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl shadow-xs font-semibold transition">
+                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                            <span>列印此課表</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 週次切換（顯示準確日期） -->
+                <div class="px-5 py-2.5 bg-white border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 no-print">
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="shiftWeek(-1)" class="flex items-center space-x-1 text-xs bg-white border border-slate-200 hover:bg-slate-50 px-2.5 py-1.5 rounded-xl font-semibold transition"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i><span>上一週</span></button>
+                        <button onclick="goThisWeek()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-xl font-semibold transition">本週</button>
+                        <button onclick="shiftWeek(1)" class="flex items-center space-x-1 text-xs bg-white border border-slate-200 hover:bg-slate-50 px-2.5 py-1.5 rounded-xl font-semibold transition"><span>下一週</span><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+                        <input type="date" id="weekPicker" onchange="jumpToDate(this.value)" class="text-xs p-1.5 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:ring-2 focus:ring-sky-500" title="跳至指定日期所在週">
+                        <button onclick="openSwimModal()" class="text-xs bg-cyan-50 border border-cyan-200 hover:bg-cyan-100 text-cyan-800 px-2.5 py-1.5 rounded-xl font-semibold transition">🏊 游泳週設定</button>
+                    </div>
+                    <div class="text-xs text-slate-600 font-semibold flex items-center gap-2">
+                        <span id="weekRangeLabel"></span>
+                        <span id="weekNote" class="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full hidden">非 115 學年度</span>
+                        <span id="swimBadge" class="hidden text-[10px] text-cyan-800 bg-cyan-50 border border-cyan-200 px-2 py-0.5 rounded-full font-bold">🏊 游泳週課表</span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center text-xs sm:text-sm border-collapse min-w-[640px]">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
+                                <th class="py-3 px-2 w-28 border-r border-slate-200">節次 / 時間</th>
+                                <th id="thDay1" class="py-3 px-2 w-1/5">星期一 (Mon)</th>
+                                <th id="thDay2" class="py-3 px-2 w-1/5">星期二 (Tue)</th>
+                                <th id="thDay3" class="py-3 px-2 w-1/5">星期三 (Wed)</th>
+                                <th id="thDay4" class="py-3 px-2 w-1/5">星期四 (Thu)</th>
+                                <th id="thDay5" class="py-3 px-2 w-1/5">星期五 (Fri)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classScheduleBody" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: 科任教師空堂分析 -->
+        <section id="sec-subject-teachers" class="tab-content hidden space-y-6 animate-fade-in">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="calendar-clock" class="text-emerald-500 w-5 h-5"></i>
+                            <span>13位專任/科任教師 空堂矩陣與共同備課熱點</span>
+                        </h2>
+                        <p class="text-xs text-slate-500">亮綠色區塊代表該節次為無排課（空堂），右側統計全校空堂科任人數</p>
+                    </div>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold">🟩 綠色：空堂 (Free)</span>
+                        <span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold">🔥 熱門共同備課時段</span>
+                    </div>
+                </div>
+
+                <!-- Hotspots Summary Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 flex items-center space-x-3 shadow-xs">
+                        <div class="bg-amber-500 text-white p-2.5 rounded-xl shadow-sm">
+                            <i data-lucide="zap" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[11px] text-amber-800 font-semibold">最佳共同備課時段 #1</div>
+                            <div class="text-sm font-bold text-amber-950" id="hotspot1">計算中...</div>
+                        </div>
+                    </div>
+                    <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 flex items-center space-x-3 shadow-xs">
+                        <div class="bg-amber-500 text-white p-2.5 rounded-xl shadow-sm">
+                            <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[11px] text-amber-800 font-semibold">最佳共同備課時段 #2</div>
+                            <div class="text-sm font-bold text-amber-950" id="hotspot2">計算中...</div>
+                        </div>
+                    </div>
+                    <div class="bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-3.5 flex items-center space-x-3 shadow-xs">
+                        <div class="bg-emerald-600 text-white p-2.5 rounded-xl shadow-sm">
+                            <i data-lucide="users" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-[11px] text-emerald-800 font-semibold">專任/科任教師統計</div>
+                            <div class="text-sm font-bold text-emerald-950">13 位領域科任教師</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Free Period Table -->
+                <div class="overflow-x-auto border border-slate-200/80 rounded-xl">
+                    <div class="flex items-center gap-2 mb-2 text-xs no-print">
+                        <span class="font-semibold text-slate-600">課表版本：</span>
+                        <button id="fmBtnRegular" onclick="setFreeMatrixSet('regular')" class="px-3 py-1 rounded-lg font-semibold transition">一般週</button>
+                        <button id="fmBtnSwim" onclick="setFreeMatrixSet('swim')" class="px-3 py-1 rounded-lg font-semibold transition">🏊 游泳週</button>
+                    </div>
+                    <table class="w-full text-center text-xs border-collapse min-w-[700px]">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                                <th class="py-3 px-2 border-r border-slate-200 min-w-[100px]">科任教師</th>
+                                <th class="py-3 px-2 border-r border-slate-200">專長領域</th>
+                                <th class="py-2 px-1">週一<br>晨 1 2 3 4 5 6 7</th>
+                                <th class="py-2 px-1">週二<br>晨 1 2 3 4 5 6 7</th>
+                                <th class="py-2 px-1">週三<br>晨 1 2 3 4</th>
+                                <th class="py-2 px-1">週四<br>晨 1 2 3 4 5 6 7</th>
+                                <th class="py-2 px-1">週五<br>晨 1 2 3 4 5 6 7</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subjectTeacherFreeMatrix" class="divide-y divide-slate-200">
+                            <!-- Matrix content loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: 代課登錄系統 -->
+        <section id="sec-substitute" class="tab-content hidden space-y-6 animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Registration Form -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 lg:col-span-1">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2 mb-4">
+                        <i data-lucide="user-plus" class="text-indigo-500 w-5 h-5"></i>
+                        <span>新增代課/請假登記</span>
+                    </h2>
+
+                    <form id="subForm" onsubmit="handleSubSubmit(event)" class="space-y-4 text-xs">
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">請假教師 (原任課)</label>
+                            <select id="subOriginalTeacher" onchange="updateSubAvailableTeachers()" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                                <option value="">請選擇請假教師...</option>
+                                <!-- JS populate -->
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">請假日期 <span id="subDateDay" class="text-indigo-600 font-bold"></span></label>
+                            <input type="date" id="subDate" onchange="updateSubAvailableTeachers()" required min="2026-08-01" max="2027-07-31" class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1 gap-2">
+                                <label class="block font-semibold text-slate-700">請假節次 <span class="text-indigo-600 font-bold">（可複選）</span></label>
+                                <div class="flex gap-1.5 text-[10px]">
+                                    <button type="button" onclick="selectTeacherPeriods()" class="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold transition">選取當天有課節次</button>
+                                    <button type="button" onclick="clearSubPeriods()" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold transition">清除</button>
+                                </div>
+                            </div>
+                            <div id="subPeriodChecks" class="grid grid-cols-4 gap-1.5">
+                                <label data-period="0" class="period-chip"><input type="checkbox" value="0" onchange="updateSubAvailableTeachers()" class="mr-1">晨間</label>
+                                <label data-period="1" class="period-chip"><input type="checkbox" value="1" onchange="updateSubAvailableTeachers()" class="mr-1">第1節</label>
+                                <label data-period="2" class="period-chip"><input type="checkbox" value="2" onchange="updateSubAvailableTeachers()" class="mr-1">第2節</label>
+                                <label data-period="3" class="period-chip"><input type="checkbox" value="3" onchange="updateSubAvailableTeachers()" class="mr-1">第3節</label>
+                                <label data-period="4" class="period-chip"><input type="checkbox" value="4" onchange="updateSubAvailableTeachers()" class="mr-1">第4節</label>
+                                <label data-period="5" class="period-chip"><input type="checkbox" value="5" onchange="updateSubAvailableTeachers()" class="mr-1">第5節</label>
+                                <label data-period="6" class="period-chip"><input type="checkbox" value="6" onchange="updateSubAvailableTeachers()" class="mr-1">第6節</label>
+                                <label data-period="7" class="period-chip"><input type="checkbox" value="7" onchange="updateSubAvailableTeachers()" class="mr-1">第7節</label>
+                            </div>
+                            <p class="text-[10px] text-slate-400 mt-1">深色標示為該教師當天有課的節次；週三下午與全校固定活動不可選。</p>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">假別與事由</label>
+                            <input type="text" id="subReason" placeholder="例如：公假研習 / 病假 / 事假" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                        </div>
+
+                        <!-- Smart Recommendation Box（每個勾選的節次各有一列） -->
+                        <div class="bg-indigo-50/90 border border-indigo-100 rounded-xl p-3.5 space-y-2">
+                            <label class="block font-bold text-indigo-900 flex items-center space-x-1.5">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i>
+                                <span>智慧推薦代課人員 (科任空堂)</span>
+                            </label>
+                            <div id="subApplyAllWrap" class="hidden">
+                                <select id="subApplyAll" onchange="applySubToAll(this.value); this.value=''" class="w-full p-2 rounded-lg border border-indigo-200 bg-white text-indigo-950 text-[11px] font-semibold outline-none"></select>
+                            </div>
+                            <div id="subAssignRows" class="space-y-2"></div>
+                            <p class="text-[10px] text-indigo-700 leading-tight">每一節各自比對無課的科任教師，並排除已被派代課的時段；導師不列入代課人選，也可選「自行輸入」臨時校外人員。</p>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl shadow-md transition flex justify-center items-center space-x-2">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                            <span>確認送出代課登記並標記課表</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Records & Notice Print -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 lg:col-span-2 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="file-text" class="text-indigo-500 w-5 h-5"></i>
+                            <span>代課登記紀錄與派課單列印</span>
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportSubExcel()" class="flex items-center space-x-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-semibold shadow-sm transition" title="依月份統計並匯出 Excel">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i><span>匯出月統計 Excel</span>
+                            </button>
+                            <span id="subRecordCount" class="text-xs font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full">共 0 筆</span>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-200/80 rounded-xl">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">日期 / 節次</th>
+                                    <th class="p-3">請假教師</th>
+                                    <th class="p-3">代課教師</th>
+                                    <th class="p-3">假別事由</th>
+                                    <th class="p-3 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subRecordList" class="divide-y divide-slate-100">
+                                <!-- JS Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: 調課系統 -->
+        <section id="sec-swap" class="tab-content hidden space-y-6 animate-fade-in">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Swap Request Form -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 lg:col-span-1">
+                    <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2 mb-4">
+                        <i data-lucide="repeat" class="text-amber-500 w-5 h-5"></i>
+                        <span>雙向/對調課申請</span>
+                    </h2>
+
+                    <form id="swapForm" onsubmit="handleSwapSubmit(event)" class="space-y-3.5 text-xs">
+                        <div class="bg-cyan-50/60 border border-cyan-100 rounded-xl p-3 space-y-1">
+                            <label class="block font-bold text-cyan-900">調課適用課表</label>
+                            <select id="swapSetSel" onchange="onSwapSetChange()" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white font-medium">
+                                <option value="regular">一般週課表</option>
+                                <option value="swim">🏊 游泳週課表</option>
+                            </select>
+                            <p class="text-[10px] text-cyan-800/80">時段清單與日期須與所選課表版本相符（游泳週日期請先於「游泳週設定」建立）。</p>
+                        </div>
+
+                        <!-- Teacher A -->
+                        <div class="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200/80 space-y-2">
+                            <span class="font-bold text-amber-900 flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                <span>申請教師 (教師 A)</span>
+                            </span>
+                            <div class="space-y-2">
+                                <select id="swapTeacherA" required onchange="updateTeacherASlots()" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white font-medium">
+                                    <option value="">選擇教師 A...</option>
+                                </select>
+                                <select id="swapSlotA" required onchange="suggestSwapDate('A')" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white font-medium">
+                                    <option value="">選擇原授課時段...</option>
+                                </select>
+                                <div>
+                                    <label class="block text-[11px] text-amber-900 font-semibold mb-0.5">調課日期（須與時段星期相符）</label>
+                                    <input type="date" id="swapDateA" required min="2026-08-01" max="2027-07-31" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white font-medium">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Teacher B -->
+                        <div class="bg-sky-50/70 p-3.5 rounded-xl border border-sky-200/80 space-y-2">
+                            <span class="font-bold text-sky-900 flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                                <span>對調教師 (教師 B)</span>
+                            </span>
+                            <div class="space-y-2">
+                                <select id="swapTeacherB" required onchange="updateTeacherBSlots()" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white font-medium">
+                                    <option value="">選擇教師 B...</option>
+                                </select>
+                                <select id="swapSlotB" required onchange="suggestSwapDate('B')" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white font-medium">
+                                    <option value="">選擇對調時段...</option>
+                                </select>
+                                <div>
+                                    <label class="block text-[11px] text-sky-900 font-semibold mb-0.5">對調日期（須與時段星期相符）</label>
+                                    <input type="date" id="swapDateB" required min="2026-08-01" max="2027-07-31" class="w-full p-2.5 rounded-lg border border-slate-200 bg-white font-medium">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-semibold text-slate-700 mb-1">調課事由</label>
+                            <input type="text" id="swapReason" placeholder="例如：校外研習對調 / 課務協調" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl shadow-md transition flex justify-center items-center space-x-2">
+                            <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                            <span>進行衝堂檢核並送出調課</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Swap List -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 lg:col-span-2 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="list-checks" class="text-amber-500 w-5 h-5"></i>
+                            <span>已登錄調課紀錄表</span>
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportSwapExcel()" class="flex items-center space-x-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-semibold shadow-sm transition" title="依月份統計並匯出 Excel">
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i><span>匯出月統計 Excel</span>
+                            </button>
+                            <span id="swapRecordCount" class="text-xs font-bold bg-amber-50 text-amber-800 px-3 py-1 rounded-full">共 0 筆</span>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-200/80 rounded-xl">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">教師 A 原時段</th>
+                                    <th class="p-3">教師 B 對調時段</th>
+                                    <th class="p-3">事由</th>
+                                    <th class="p-3 text-center">衝堂狀態</th>
+                                    <th class="p-3 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="swapRecordList" class="divide-y divide-slate-100">
+                                <!-- JS Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- EDIT COURSE MODAL -->
+    <div id="swimModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">🏊 游泳週設定</h3>
+                <button type="button" onclick="closeSwimModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg text-lg leading-none">✕</button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">日期落在游泳週內時，課表、代課推薦與調課會自動改用「游泳週課表」；其餘日期使用一般週課表。</p>
+            <div id="swimWeekList" class="space-y-1.5"></div>
+            <form id="swimForm" onsubmit="addSwimWeek(event)" class="admin-only space-y-2 border-t border-slate-100 pt-3 text-xs">
+                <div class="font-bold text-slate-700">新增游泳週（僅教務處）</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="block text-slate-500 mb-0.5">起始日</label><input type="date" id="swimStart" required min="2026-08-01" max="2027-07-31" onchange="suggestSwimEnd()" class="w-full p-2 rounded-lg border border-slate-200 bg-slate-50"></div>
+                    <div><label class="block text-slate-500 mb-0.5">結束日</label><input type="date" id="swimEnd" required min="2026-08-01" max="2027-07-31" class="w-full p-2 rounded-lg border border-slate-200 bg-slate-50"></div>
+                </div>
+                <input type="text" id="swimNote" maxlength="40" placeholder="備註（選填，例如：第一梯次）" class="w-full p-2 rounded-lg border border-slate-200 bg-slate-50">
+                <button type="submit" class="w-full text-sm bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2.5 rounded-xl font-bold transition">新增游泳週</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="roleModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 flex justify-center items-center p-4">
+        <form id="roleForm" onsubmit="submitRoleForm(event)" class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-slate-100">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 id="roleModalTitle" class="text-base font-bold text-slate-800">🛡️ 教務處登入</h3>
+                <button type="button" onclick="closeRoleModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg text-lg leading-none">✕</button>
+            </div>
+            <div id="roleModalDesc" class="text-xs text-slate-500 leading-relaxed"></div>
+            <div id="roleFieldsAdmin" class="hidden space-y-2">
+                <button type="button" onclick="openRoleModal('set')" class="w-full text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl font-semibold transition">變更教務處密碼</button>
+                <button type="button" onclick="logoutAdmin()" class="w-full text-sm bg-rose-50 hover:bg-rose-100 text-rose-700 px-4 py-2.5 rounded-xl font-semibold transition">登出教務處</button>
+            </div>
+            <div id="roleFieldsPin" class="space-y-2">
+                <input type="password" id="rolePin" autocomplete="off" placeholder="請輸入密碼" class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+                <input type="password" id="rolePin2" autocomplete="off" placeholder="再輸入一次密碼確認" class="hidden w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:ring-2 focus:ring-sky-500">
+                <button type="submit" id="roleSubmitBtn" class="w-full text-sm bg-sky-600 hover:bg-sky-700 text-white px-4 py-2.5 rounded-xl font-bold transition">登入</button>
+            </div>
+            <p id="roleModalNote" class="text-[10px] text-slate-400 leading-snug"></p>
+        </form>
+    </div>
+
+    <div id="deleteSwapModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-100 animate-fade-in">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">🗑️ 刪除調課紀錄</h3>
+                <button onclick="closeDeleteSwapModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg text-lg leading-none">✕</button>
+            </div>
+            <div id="deleteSwapSummary" class="text-xs bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1 text-slate-700"></div>
+            <div id="deleteSwapHint" class="text-xs"></div>
+            <div class="flex flex-col gap-2 pt-1">
+                <button id="btnDeleteRevert" onclick="confirmDeleteSwap(true)" class="w-full text-sm bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed">刪除紀錄，並將課表還原為調課前</button>
+                <button onclick="confirmDeleteSwap(false)" class="w-full text-sm bg-rose-50 hover:bg-rose-100 text-rose-700 px-4 py-2.5 rounded-xl font-semibold transition">只刪除紀錄（課表維持調課後狀態）</button>
+                <button onclick="closeDeleteSwapModal()" class="w-full text-sm bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-4 py-2.5 rounded-xl font-semibold transition">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editCourseModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-slate-100 animate-fade-in">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                    <i data-lucide="pencil" class="w-4 h-4 text-sky-500"></i>
+                    <span id="editModalTitle">✏️ 編輯課程單元格</span>
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="editCourseForm" onsubmit="saveCourseEdit(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="editClassId">
+                <input type="hidden" id="editDay">
+                <input type="hidden" id="editPeriod">
+                <input type="hidden" id="editSet">
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">中文科目名稱</label>
+                    <input type="text" id="editSubjectZh" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">英文/雙語名稱 (Bilingual)</label>
+                    <input type="text" id="editSubjectEn" class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">授課教師</label>
+                    <input type="text" id="editTeacher" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">上課地點 / 教室 (選填)</label>
+                    <input type="text" id="editRoom" placeholder="例如：專科教室 / 操場" class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+
+                <div class="pt-2 flex space-x-2">
+                    <button type="submit" class="flex-1 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md transition">
+                        儲存變更
+                    </button>
+                    <button type="button" onclick="clearCourseCell()" class="py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl transition">
+                        清空課程
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Print Template Overlay (Hidden on screen) -->
+    <div id="printTemplate" class="print-only p-8 max-w-2xl mx-auto text-black">
+        <div class="text-center space-y-1 border-b-2 border-black pb-4 mb-4">
+            <h1 class="text-xl font-bold">臺中市潭子區新興國民小學 115學年度</h1>
+            <h2 id="printFormTitle" class="text-2xl font-black underline">教師派課 / 調課通知單</h2>
+        </div>
+        <div id="printFormContent" class="space-y-4 text-sm leading-relaxed">
+            <!-- Dynamic Content for Printing -->
+        </div>
+        <div class="mt-12 pt-8 border-t border-gray-400 grid grid-cols-3 text-center text-xs font-bold">
+            <div>申請人 (教員)：＿＿＿＿＿＿</div>
+            <div>教學組長：＿＿＿＿＿＿</div>
+            <div>教務主任：＿＿＿＿＿＿</div>
+        </div>
+    </div>
+
+    <script>
+        // System Global State & Models
+        let isEnglish = false;
+        const STORAGE_KEY = "HHES_115_SCHEDULE_DATA_V3";
+
+        // Global Constants & Teacher Lists
+        const HOMEROOM_TEACHERS = [
+            { classId: '一甲', teacher: '張淑冠' },
+            { classId: '二甲', teacher: '謝涵淳' },
+            { classId: '二乙', teacher: '石瑛' },
+            { classId: '三甲', teacher: '賴瑞芬' },
+            { classId: '三乙', teacher: '楊筑珺' },
+            { classId: '四甲', teacher: '陳宗利' },
+            { classId: '四乙', teacher: '施佩青' },
+            { classId: '五甲', teacher: '盧玟如' },
+            { classId: '五乙', teacher: '呂冠鋒' },
+            { classId: '六甲', teacher: '李倩芳' },
+            { classId: '六乙', teacher: '陳茹毓' },
+            { classId: '彩虹班', teacher: '連珮如' }
+        ];
+
+        const SUBJECT_TEACHERS = [
+            { name: '陳琳筑', subject: '英語/雙語', color: 'bg-blue-100 text-blue-800' },
+            { name: '林珈瑜', subject: '體育/自然', color: 'bg-emerald-100 text-emerald-800' },
+            { name: '莊馨玫', subject: '體育/健康', color: 'bg-green-100 text-green-800' },
+            { name: '程欣儀', subject: '音樂/綜合', color: 'bg-purple-100 text-purple-800' },
+            { name: '林宜佳', subject: '英語/雙語', color: 'bg-sky-100 text-sky-800' },
+            { name: '王姿蘋', subject: '美勞/自然', color: 'bg-amber-100 text-amber-800' },
+            { name: '陳彥銘', subject: '資訊/自然', color: 'bg-indigo-100 text-indigo-800' },
+            { name: '談蔚蓉', subject: '體育/自然', color: 'bg-teal-100 text-teal-800' },
+            { name: '詹家榕', subject: '自然/科任', color: 'bg-lime-100 text-lime-800' },
+            { name: '張淑慈', subject: '本土語文', color: 'bg-orange-100 text-orange-800' },
+            { name: '陳亞芸', subject: '美勞/專科', color: 'bg-pink-100 text-pink-800' },
+            { name: '李家安', subject: '音樂/健康', color: 'bg-rose-100 text-rose-800' },
+            { name: '陳一之', subject: '本土語/專科', color: 'bg-cyan-100 text-cyan-800' }
+        ];
+
+        const PERIOD_TIMES = [
+            { period: 0, time: '08:00 - 08:35' },
+            { period: 1, time: '08:40 - 09:20' },
+            { period: 2, time: '09:30 - 10:10' },
+            { period: 3, time: '10:30 - 11:10' },
+            { period: 4, time: '11:20 - 12:00' },
+            { period: 5, time: '13:30 - 14:10' },
+            { period: 6, time: '14:20 - 15:00' },
+            { period: 7, time: '15:10 - 15:50' }
+        ];
+
+        // ===== 日期工具（一律使用本地時間，避免 UTC 造成日期差一天）=====
+        const SCHOOL_YEAR_START = '2026-08-01';   // 115 學年度起訖
+        const SCHOOL_YEAR_END = '2027-07-31';
+        const WEEKDAY_ZH = ['日', '一', '二', '三', '四', '五', '六'];
+        const pad2 = n => String(n).padStart(2, '0');
+        const toISO = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        const parseISO = str => { const [y, m, d] = str.split('-').map(Number); return new Date(y, m - 1, d); };
+        const fmtDate = str => str ? str.replace(/-/g, '/') : '';
+        const fmtDateWithDay = str => str ? `${fmtDate(str)} (週${WEEKDAY_ZH[parseISO(str).getDay()]})` : '';
+        const dayOfDate = str => { const w = parseISO(str).getDay(); return (w >= 1 && w <= 5) ? w : 0; };
+        const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+        const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+        const inSchoolYear = str => str >= SCHOOL_YEAR_START && str <= SCHOOL_YEAR_END;
+        // 從今天起算，第一個符合指定星期 (1-5) 的日期
+        function nextDateForDay(day, setKey) {
+            const t0 = new Date();
+            if (setKey) {
+                for (let i = 0; i < 400; i++) {
+                    const d = addDays(t0, i);
+                    if (d.getDay() !== day) continue;
+                    const ds = toISO(d);
+                    if (isSwimDate(ds) === (setKey === 'swim')) return ds;
+                }
+            }
+            const t = new Date();
+            const diff = (day - t.getDay() + 7) % 7;
+            return toISO(addDays(t, diff));
+        }
+        // 週末時預設顯示下一週
+        let viewWeekMonday = (() => { const t = new Date(); const w = t.getDay(); return mondayOf(w === 0 ? addDays(t, 1) : (w === 6 ? addDays(t, 2) : t)); })();
+
+        // ===== 全校固定晨光時間（不可排課、不可編輯、不參與代課/調課）=====
+        const FIXED_MORNING = {
+            1: { name: '教師晨會', nameEn: "Teachers' Morning Meeting" },
+            2: { name: '兒童朝會', nameEn: "Children's Morning Assembly" }
+        };
+        // 例外：彩虹班星期二晨光時間不固定，可自行排課
+        const FIXED_EXEMPT = { '彩虹班': [2] };
+        const isFixedSlot = (d, p, classId) =>
+            String(p) === '0' && !!FIXED_MORNING[parseInt(d)] && !(FIXED_EXEMPT[classId] || []).includes(parseInt(d));
+        // 代課用：該教師若正好在例外班級的這個時段授課，則不視為固定
+        const isFixedForTeacher = (d, p, teacher) => {
+            if (!isFixedSlot(d, p)) return false;
+            return !Object.keys(FIXED_EXEMPT).some(c => {
+                const cell = ALL_SCHEDULES[c] && ALL_SCHEDULES[c][d] && ALL_SCHEDULES[c][d][0];
+                return String(p) === '0' && (FIXED_EXEMPT[c] || []).includes(parseInt(d)) && cell && cell.teacher === teacher;
+            });
+        };
+        const fixedSlotText = d => `${FIXED_MORNING[parseInt(d)].name}為全校固定活動，無法排課或代課`;
+        function stripFixedMorning(schedules) {
+            if (!schedules) return schedules;
+            Object.keys(schedules).forEach(c => {
+                [1, 2].forEach(d => {
+                    if ((FIXED_EXEMPT[c] || []).includes(d)) return;
+                    if (schedules[c] && schedules[c][d]) delete schedules[c][d][0];
+                });
+            });
+            return schedules;
+        }
+
+        // 節次顯示：第 0 節 = 晨間 (08:00-08:35)
+        const periodLabel = p => String(p) === '0' ? '晨間' : `第${p}節`;
+        const periodLabelSp = p => String(p) === '0' ? '晨間' : `第 ${p} 節`;
+
+        // Global State Variables
+        let ALL_SCHEDULES = {};
+        // 游泳週：另有一份游泳週課表；swimWeeks 為游泳週的日期區間（由教務處設定）
+        let ALL_SWIM_SCHEDULES = {};
+        let swimWeeks = [];                 // [{ id, start: 'YYYY-MM-DD', end: 'YYYY-MM-DD', note }]
+        // 預設游泳週（教務處可在「游泳週設定」增修）
+        const DEFAULT_SWIM_WEEKS = [
+            { id: 1, start: '2026-10-12', end: '2026-10-16', note: '游泳週' },
+            { id: 2, start: '2026-11-02', end: '2026-11-20', note: '游泳週' }
+        ];
+        const SWIM_DEFAULTS_VERSION = 2;   // 預設游泳週有新增時加一，舊資料載入時會補上尚未存在的預設區間
+        const defaultSwimWeeks = () => DEFAULT_SWIM_WEEKS.map(w => ({ ...w }));
+        let FREE_MATRIX_SET = 'regular';
+        const isSwimDate = ds => !!ds && swimWeeks.some(w => ds >= w.start && ds <= w.end);
+        const schedSet = key => key === 'swim' ? ALL_SWIM_SCHEDULES : ALL_SCHEDULES;
+        const setKeyFor = ds => isSwimDate(ds) ? 'swim' : 'regular';
+        const schedFor = ds => schedSet(setKeyFor(ds));
+        const buildBackupObject = () => ({ schedules: ALL_SCHEDULES, swimSchedules: ALL_SWIM_SCHEDULES, swimWeeks, subRecords, swapRecords });
+        let subRecords = [];
+        let swapRecords = [];
+        let currentClassId = '一甲';
+
+        function showToast(msg, type = "info") {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const bgColor = type === 'alert' ? 'bg-rose-600' : 'bg-slate-800';
+            toast.className = `${bgColor} text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0 z-50`;
+            toast.innerHTML = `<span>${msg}</span>`;
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function generateDefaultSchedules() {
+            // 資料來源：115學年度雙語課表.pdf（逐格校對；第 0 節 = 彩虹班晨光時間）
+            return {
+                "一甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "2": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "張淑冠" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "陳琳筑" }, "5": { name: "健康", nameEn: "Health", teacher: "莊馨玫" }, "6": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" } },
+                    "3": { "1": { name: "本土語文", nameEn: "Native Languages", teacher: "陳一之" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" } },
+                    "4": { "1": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "陳琳筑" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "張淑冠" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" } }
+                },
+                "二甲": {
+                    "1": { "1": { name: "數學", nameEn: "Mathematics", teacher: "謝涵淳" }, "2": { name: "生活課程", nameEn: "Life Curriculum", teacher: "程欣儀" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "謝涵淳" }, "4": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "林宜佳" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "謝涵淳" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "謝涵淳" }, "3": { name: "★健康", nameEn: "Health", teacher: "謝涵淳" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "林宜佳" }, "5": { name: "國語文", nameEn: "Mandarin", teacher: "謝涵淳" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" }, "7": { name: "國語文", nameEn: "Mandarin", teacher: "謝涵淳" } },
+                    "3": { "1": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" }, "2": { name: "本土語文", nameEn: "Native Languages", teacher: "陳一之" }, "3": { name: "★國語文", nameEn: "Mandarin", teacher: "謝涵淳" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "林宜佳" } },
+                    "4": { "1": { name: "數學", nameEn: "Mathematics", teacher: "謝涵淳" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "謝涵淳" }, "3": { name: "生活課程", nameEn: "Life Curriculum", teacher: "程欣儀" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "林宜佳" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "莊馨玫" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "謝涵淳" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "謝涵淳" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "林宜佳" } }
+                },
+                "二乙": {
+                    "1": { "1": { name: "生活課程", nameEn: "Life Curriculum", teacher: "石瑛" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "石瑛" }, "3": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "林宜佳" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "石瑛" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "石瑛" }, "2": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "石瑛" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "程欣儀" }, "5": { name: "數學", nameEn: "Mathematics", teacher: "石瑛" }, "6": { name: "健康", nameEn: "Health", teacher: "李家安" }, "7": { name: "生活課程", nameEn: "Life Curriculum", teacher: "石瑛" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "石瑛" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "石瑛" }, "3": { name: "本土語文", nameEn: "Native Languages", teacher: "陳一之" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "石瑛" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "石瑛" }, "2": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "石瑛" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "石瑛" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "石瑛" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "石瑛" }, "3": { name: "生活課程", nameEn: "Life Curriculum", teacher: "程欣儀" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "石瑛" } }
+                },
+                "三甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" }, "3": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "4": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "5": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "賴瑞芬" }, "6": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "7": { name: "社會", nameEn: "Social studies", teacher: "賴瑞芬" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "賴瑞芬" }, "2": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "3": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "賴瑞芬" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "王姿蘋" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "王姿蘋" }, "7": { name: "社會", nameEn: "Social studies", teacher: "賴瑞芬" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" }, "3": { name: "★健康", nameEn: "Health", teacher: "賴瑞芬" }, "4": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "莊馨玫" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "2": { name: "自然科學", nameEn: "Natural Sciences", teacher: "王姿蘋" }, "3": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "程欣儀" }, "2": { name: "藝術(音樂)", nameEn: "Arts", teacher: "李家安" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" }, "4": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "5": { name: "社會", nameEn: "Social studies", teacher: "賴瑞芬" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } }
+                },
+                "三乙": {
+                    "1": { "1": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "2": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "程欣儀" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "程欣儀" }, "7": { name: "健康", nameEn: "Health", teacher: "楊筑珺" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "楊筑珺" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "3": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "5": { name: "藝術(音樂)", nameEn: "Arts", teacher: "李家安" }, "6": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "7": { name: "社會", nameEn: "Social studies", teacher: "楊筑珺" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "3": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "4": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "楊筑珺" } },
+                    "4": { "1": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "2": { name: "自然科學", nameEn: "Natural Sciences", teacher: "程欣儀" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "4": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "莊馨玫" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "2": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "4": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "楊筑珺" }, "5": { name: "社會", nameEn: "Social studies", teacher: "楊筑珺" }, "6": { name: "社會", nameEn: "Social studies", teacher: "楊筑珺" }, "7": { name: "英語文", nameEn: "English", teacher: "陳琳筑" } }
+                },
+                "四甲": {
+                    "1": { "1": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "2": { name: "英語文", nameEn: "English", teacher: "林宜佳" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "4": { name: "健康", nameEn: "Health", teacher: "陳宗利" }, "5": { name: "社會", nameEn: "Social studies", teacher: "陳宗利" }, "6": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "7": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "陳宗利" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "3": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "程欣儀" }, "4": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "談蔚蓉" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "7": { name: "社會", nameEn: "Social studies", teacher: "陳宗利" } },
+                    "3": { "1": { name: "社會", nameEn: "Social studies", teacher: "陳宗利" }, "2": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "4": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "陳宗利" } },
+                    "4": { "1": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "陳宗利" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "4": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "詹家榕" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "談蔚蓉" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "談蔚蓉" }, "5": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "林宜佳" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" } }
+                },
+                "四乙": {
+                    "1": { "1": { name: "★數學", nameEn: "Mathematics", teacher: "施佩青" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "詹家榕" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "詹家榕" }, "5": { name: "英語文", nameEn: "English", teacher: "林宜佳" }, "6": { name: "社會", nameEn: "Social studies", teacher: "施佩青" }, "7": { name: "社會", nameEn: "Social studies", teacher: "施佩青" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "施佩青" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "施佩青" }, "3": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "4": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "5": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" }, "7": { name: "社會", nameEn: "Social studies", teacher: "施佩青" } },
+                    "3": { "1": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" }, "3": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "林宜佳" }, "4": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "施佩青" } },
+                    "4": { "1": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "施佩青" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "施佩青" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "詹家榕" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "施佩青" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "施佩青" }, "3": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "4": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "5": { name: "健康", nameEn: "Health", teacher: "莊馨玫" }, "6": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "程欣儀" }, "7": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" } }
+                },
+                "五甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "3": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" }, "4": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "5": { name: "社會", nameEn: "Social studies", teacher: "盧玟如" }, "6": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "盧玟如" }, "7": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "盧玟如" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "4": { name: "社會", nameEn: "Social studies", teacher: "盧玟如" }, "5": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "6": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } },
+                    "3": { "1": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "3": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "陳彥銘" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" } },
+                    "4": { "1": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "2": { name: "社會", nameEn: "Social studies", teacher: "盧玟如" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "4": { name: "健康", nameEn: "Health", teacher: "盧玟如" }, "5": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "6": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "7": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "談蔚蓉" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "3": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "4": { name: "★彈性課程", nameEn: "Alternative curriculum", teacher: "盧玟如" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "7": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" } }
+                },
+                "五乙": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "3": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "4": { name: "社會", nameEn: "Social studies", teacher: "呂冠鋒" }, "5": { name: "健康", nameEn: "Health", teacher: "呂冠鋒" }, "6": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "陳彥銘" }, "7": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "呂冠鋒" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "呂冠鋒" }, "2": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "2": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "4": { name: "社會", nameEn: "Social studies", teacher: "呂冠鋒" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "2": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "3": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "4": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "7": { name: "社會", nameEn: "Social studies", teacher: "呂冠鋒" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "李家安" }, "2": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "5": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" }, "6": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "7": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "呂冠鋒" } }
+                },
+                "六甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "李倩芳" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "5": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "6": { name: "社會", nameEn: "Social studies", teacher: "李倩芳" }, "7": { name: "社會", nameEn: "Social studies", teacher: "李倩芳" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "李倩芳" }, "2": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "王姿蘋" }, "3": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "4": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "5": { name: "★數學", nameEn: "Mathematics", teacher: "李倩芳" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" }, "7": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "李倩芳" }, "3": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "4": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "2": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "李倩芳" }, "3": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" }, "4": { name: "社會", nameEn: "Social studies", teacher: "李倩芳" }, "5": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" }, "7": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "林珈瑜" }, "2": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "3": { name: "★數學", nameEn: "Mathematics", teacher: "李倩芳" }, "4": { name: "★彈性課程", nameEn: "Alternative curriculum", teacher: "李倩芳" }, "5": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "7": { name: "健康", nameEn: "Health", teacher: "李倩芳" } }
+                },
+                "六乙": {
+                    "1": { "1": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "4": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "5": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "王姿蘋" }, "6": { name: "社會", nameEn: "Social studies", teacher: "陳茹毓" }, "7": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "陳茹毓" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "陳茹毓" }, "2": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "5": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "6": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "2": { name: "健康", nameEn: "Health", teacher: "林珈瑜" }, "3": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" }, "4": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "2": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "4": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "陳茹毓" }, "5": { name: "社會", nameEn: "Social studies", teacher: "陳茹毓" }, "6": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "陳茹毓" }, "2": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "7": { name: "社會", nameEn: "Social studies", teacher: "陳茹毓" } }
+                },
+                "彩虹班": {
+                    "1": { "1": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙", teacher: "連珮如" }, "2": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲", teacher: "連珮如" }, "3": { name: "間接服務", nameEn: "Indirect Service", teacher: "連珮如" } },
+                    "2": { "0": { name: "社會技巧", nameEn: "Social Skills", room: "三、四", teacher: "連珮如" }, "2": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙", teacher: "連珮如" }, "3": { name: "學習策略 A", nameEn: "Learning Strategies A", room: "二甲、三甲", teacher: "連珮如" }, "5": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲", teacher: "連珮如" } },
+                    "3": { "0": { name: "動作機能訓練", nameEn: "Motor Skills Training", room: "二、四、六", teacher: "連珮如" }, "2": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲", teacher: "連珮如" }, "3": { name: "學習策略 A", nameEn: "Learning Strategies A", room: "二甲、三甲", teacher: "連珮如" }, "4": { name: "學習策略 B", nameEn: "Learning Strategies B", room: "四甲、四乙", teacher: "連珮如" } },
+                    "4": { "0": { name: "學習策略 C", nameEn: "Learning Strategies C", room: "五甲、六甲", teacher: "連珮如" }, "1": { name: "學習策略 B", nameEn: "Learning Strategies B", room: "四甲、四乙", teacher: "連珮如" }, "2": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙", teacher: "連珮如" } },
+                    "5": { "0": { name: "社會技巧", nameEn: "Social Skills", room: "五、六", teacher: "連珮如" }, "2": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙", teacher: "連珮如" }, "3": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲", teacher: "連珮如" }, "4": { name: "學習策略 C", nameEn: "Learning Strategies C", room: "五甲、六甲", teacher: "連珮如" } }
+                }
+            };
+        }
+
+        // 游泳週課表（資料來源：115學年度游泳雙語課表.pdf）。未列出的班級（二甲、二乙）與一般週相同。
+        function generateDefaultSwimSchedules() {
+            const base = generateDefaultSchedules();
+            const sw = {
+                "一甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "2": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "張淑冠" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "陳琳筑" }, "5": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" }, "6": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" } },
+                    "3": { "1": { name: "本土語文", nameEn: "Native Languages", teacher: "陳一之" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "張淑冠" } },
+                    "4": { "1": { name: "體育", nameEn: "Physical Education", teacher: "林珈瑜" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "生活課程", nameEn: "Life Curriculum", teacher: "陳琳筑" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "張淑冠" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "張淑冠" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "張淑冠" }, "4": { name: "健康", nameEn: "Health", teacher: "莊馨玫" } }
+                },
+                "三甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" }, "3": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "4": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "5": { name: "社會", nameEn: "Social studies", teacher: "賴瑞芬" }, "6": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "7": { name: "自然科學", nameEn: "Natural Sciences", teacher: "王姿蘋" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "賴瑞芬" }, "2": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "3": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "賴瑞芬" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "5": { name: "健康", nameEn: "Health", teacher: "賴瑞芬" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" }, "3": { name: "★社會", nameEn: "Social studies", teacher: "賴瑞芬" }, "4": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "莊馨玫" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "王姿蘋" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "王姿蘋" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "程欣儀" }, "2": { name: "藝術(音樂)", nameEn: "Arts", teacher: "李家安" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "賴瑞芬" }, "4": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "5": { name: "社會", nameEn: "Social studies", teacher: "賴瑞芬" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "賴瑞芬" }, "7": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "賴瑞芬" } }
+                },
+                "三乙": {
+                    "1": { "1": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "2": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "程欣儀" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "程欣儀" }, "7": { name: "社會", nameEn: "Social studies", teacher: "楊筑珺" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "楊筑珺" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "3": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "5": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "6": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "7": { name: "社會", nameEn: "Social studies", teacher: "楊筑珺" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "3": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "莊馨玫" }, "4": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "楊筑珺" } },
+                    "4": { "1": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "2": { name: "自然科學", nameEn: "Natural Sciences", teacher: "程欣儀" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "楊筑珺" }, "4": { name: "社會", nameEn: "Social studies", teacher: "楊筑珺" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "2": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "楊筑珺" }, "4": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "楊筑珺" }, "5": { name: "健康", nameEn: "Health", teacher: "楊筑珺" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } }
+                },
+                "四甲": {
+                    "1": { "1": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "2": { name: "英語文", nameEn: "English", teacher: "林宜佳" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "4": { name: "社會", nameEn: "Social studies", teacher: "陳宗利" }, "5": { name: "健康", nameEn: "Health", teacher: "陳宗利" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "陳宗利" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "3": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "程欣儀" }, "4": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "5": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "6": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "7": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" } },
+                    "3": { "1": { name: "社會", nameEn: "Social studies", teacher: "陳宗利" }, "2": { name: "自然科學", nameEn: "Natural Sciences", teacher: "談蔚蓉" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "4": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "陳宗利" } },
+                    "4": { "1": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "陳宗利" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "4": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "詹家榕" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "陳宗利" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "談蔚蓉" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "談蔚蓉" }, "5": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "林宜佳" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "陳宗利" }, "7": { name: "社會", nameEn: "Social studies", teacher: "陳宗利" } }
+                },
+                "四乙": {
+                    "1": { "1": { name: "★新興資訊家", nameEn: "Alternative curriculum", teacher: "程欣儀" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "詹家榕" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "詹家榕" }, "5": { name: "英語文", nameEn: "English", teacher: "林宜佳" }, "6": { name: "社會", nameEn: "Social studies", teacher: "施佩青" }, "7": { name: "社會", nameEn: "Social studies", teacher: "施佩青" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "施佩青" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "施佩青" }, "3": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "4": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "5": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" }, "7": { name: "社會", nameEn: "Social studies", teacher: "施佩青" } },
+                    "3": { "1": { name: "數學", nameEn: "Mathematics", teacher: "施佩青" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" }, "3": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "林宜佳" }, "4": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "施佩青" } },
+                    "4": { "1": { name: "★綜合活動", nameEn: "Integrative Activities", teacher: "施佩青" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "施佩青" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "詹家榕" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "施佩青" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "施佩青" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "施佩青" }, "4": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "5": { name: "健康", nameEn: "Health", teacher: "莊馨玫" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } }
+                },
+                "五甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "3": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" }, "4": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "5": { name: "社會", nameEn: "Social studies", teacher: "盧玟如" }, "6": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "陳彥銘" }, "7": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "盧玟如" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "4": { name: "社會", nameEn: "Social studies", teacher: "盧玟如" }, "5": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "6": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "7": { name: "英語文", nameEn: "English", teacher: "陳琳筑" } },
+                    "3": { "1": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "3": { name: "社會", nameEn: "Social studies", teacher: "盧玟如" }, "4": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" } },
+                    "4": { "1": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "2": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "4": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "盧玟如" }, "5": { name: "健康", nameEn: "Health", teacher: "盧玟如" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "談蔚蓉" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "盧玟如" }, "3": { name: "★數學", nameEn: "Mathematics", teacher: "盧玟如" }, "4": { name: "★彈性課程", nameEn: "Alternative curriculum", teacher: "盧玟如" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "7": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" } }
+                },
+                "五乙": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "3": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "4": { name: "社會", nameEn: "Social studies", teacher: "呂冠鋒" }, "5": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "6": { name: "藝術(美勞)", nameEn: "Arts", teacher: "王姿蘋" }, "7": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "呂冠鋒" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "呂冠鋒" }, "2": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "5": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "呂冠鋒" }, "6": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "陳彥銘" }, "7": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "2": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "4": { name: "社會", nameEn: "Social studies", teacher: "呂冠鋒" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "2": { name: "社會", nameEn: "Social studies", teacher: "呂冠鋒" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" }, "5": { name: "健康", nameEn: "Health", teacher: "呂冠鋒" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "莊馨玫" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "李家安" }, "2": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "呂冠鋒" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "呂冠鋒" }, "5": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "程欣儀" }, "6": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "7": { name: "自然科學", nameEn: "Natural Sciences", teacher: "林珈瑜" } }
+                },
+                "六甲": {
+                    "1": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "李倩芳" }, "3": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "4": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "5": { name: "健康", nameEn: "Health", teacher: "李倩芳" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "李倩芳" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "李倩芳" }, "3": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "4": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "5": { name: "★新興資訊家", nameEn: "Alternative curriculum", teacher: "王姿蘋" }, "6": { name: "社會", nameEn: "Social studies", teacher: "李倩芳" }, "7": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" } },
+                    "3": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "2": { name: "★數學", nameEn: "Mathematics", teacher: "李倩芳" }, "3": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" }, "4": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "2": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "李倩芳" }, "3": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "4": { name: "社會", nameEn: "Social studies", teacher: "李倩芳" }, "5": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "6": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" }, "7": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "林珈瑜" }, "2": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "3": { name: "★數學", nameEn: "Mathematics", teacher: "李倩芳" }, "4": { name: "★彈性課程", nameEn: "Alternative curriculum", teacher: "李倩芳" }, "5": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "6": { name: "國語文", nameEn: "Mandarin", teacher: "李倩芳" }, "7": { name: "社會", nameEn: "Social studies", teacher: "李倩芳" } }
+                },
+                "六乙": {
+                    "1": { "1": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "2": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "4": { name: "藝術(音樂)", nameEn: "Arts", teacher: "程欣儀" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "6": { name: "社會", nameEn: "Social studies", teacher: "陳茹毓" }, "7": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "陳茹毓" } },
+                    "2": { "1": { name: "彈性課程(議題/其他)", nameEn: "Alternative curriculum", teacher: "陳茹毓" }, "2": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "4": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" }, "5": { name: "健康", nameEn: "Health", teacher: "林珈瑜" }, "6": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" }, "7": { name: "體育", nameEn: "Physical Education", teacher: "談蔚蓉" } },
+                    "3": { "1": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "2": { name: "藝術(美勞)", nameEn: "Arts", teacher: "陳亞芸" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "4": { name: "新興行動家", nameEn: "Alternative curriculum", teacher: "陳琳筑" } },
+                    "4": { "1": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "2": { name: "英語文", nameEn: "English", teacher: "陳琳筑" }, "3": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "4": { name: "彈性課程", nameEn: "Alternative curriculum", teacher: "陳茹毓" }, "5": { name: "新興資訊家", nameEn: "Alternative curriculum", teacher: "王姿蘋" }, "6": { name: "本土語文", nameEn: "Native Languages", teacher: "張淑慈" }, "7": { name: "社會", nameEn: "Social studies", teacher: "陳茹毓" } },
+                    "5": { "1": { name: "彈性課程(多元社團)", nameEn: "Alternative curriculum", teacher: "陳茹毓" }, "2": { name: "綜合活動", nameEn: "Integrative Activities", teacher: "林珈瑜" }, "3": { name: "國語文", nameEn: "Mandarin", teacher: "陳茹毓" }, "4": { name: "數學", nameEn: "Mathematics", teacher: "陳茹毓" }, "5": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "6": { name: "自然科學", nameEn: "Natural Sciences", teacher: "陳彥銘" }, "7": { name: "社會", nameEn: "Social studies", teacher: "陳茹毓" } }
+                },
+                "彩虹班": {
+                    "1": { "1": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙(資訊)", teacher: "連珮如" }, "2": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲", teacher: "連珮如" }, "3": { name: "間接服務", nameEn: "Indirect Service", teacher: "連珮如" } },
+                    "2": { "2": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙", teacher: "連珮如" }, "3": { name: "學習策略 A", nameEn: "Learning Strategies A", room: "二甲、三甲", teacher: "連珮如" }, "5": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲(資訊)", teacher: "連珮如" } },
+                    "3": { "2": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲", teacher: "連珮如" }, "3": { name: "學習策略 A", nameEn: "Learning Strategies A", room: "二甲、三甲", teacher: "連珮如" }, "4": { name: "學習策略 B", nameEn: "Learning Strategies B", room: "四甲、四乙", teacher: "連珮如" } },
+                    "4": { "1": { name: "學習策略 B", nameEn: "Learning Strategies B", room: "四甲、四乙", teacher: "連珮如" }, "2": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙", teacher: "連珮如" } },
+                    "5": { "2": { name: "數學 A", nameEn: "Mathematics A", room: "四甲、四乙", teacher: "連珮如" }, "3": { name: "數學 B", nameEn: "Mathematics B", room: "五甲、六甲", teacher: "連珮如" }, "4": { name: "學習策略 C", nameEn: "Learning Strategies C", room: "五甲、六甲", teacher: "連珮如" } }
+                }
+            };
+            // 彩虹班晨光時間（第 0 節）與一般週相同
+            ['2', '3', '4', '5'].forEach(d => { if (base['彩虹班'][d] && base['彩虹班'][d][0]) sw['彩虹班'][d][0] = base['彩虹班'][d][0]; });
+            return { ...base, ...sw };
+        }
+
+        function createEmptySchedules() {
+            const emptySchedules = {};
+            HOMEROOM_TEACHERS.forEach(item => {
+                emptySchedules[item.classId] = {};
+            });
+            return emptySchedules;
+        }
+
+
+        // ===================== 游泳週設定 =====================
+        function openSwimModal() {
+            renderSwimWeekList();
+            document.getElementById('swimModal').classList.remove('hidden');
+        }
+        function closeSwimModal() { document.getElementById('swimModal').classList.add('hidden'); }
+
+        function renderSwimWeekList() {
+            const box = document.getElementById('swimWeekList');
+            if (swimWeeks.length === 0) {
+                box.innerHTML = '<p class="text-xs text-slate-400 bg-slate-50 rounded-xl p-3 text-center">尚未設定游泳週。教務處可於下方新增。</p>';
+                return;
+            }
+            box.innerHTML = '';
+            swimWeeks.slice().sort((a, b) => a.start.localeCompare(b.start)).forEach(w => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-2 bg-cyan-50/70 border border-cyan-100 rounded-xl px-3 py-2 text-xs';
+                row.innerHTML = `<div><div class="font-mono font-semibold text-cyan-900">${fmtDateWithDay(w.start)} – ${fmtDateWithDay(w.end)}</div>${w.note ? `<div class="text-slate-500">${w.note}</div>` : ''}</div>
+                    <button onclick="deleteSwimWeek(${w.id})" class="admin-only text-rose-600 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded-lg font-semibold">刪除</button>`;
+                box.appendChild(row);
+            });
+        }
+
+        function suggestSwimEnd() {
+            const s = document.getElementById('swimStart').value, e = document.getElementById('swimEnd');
+            if (s && !e.value) e.value = toISO(addDays(mondayOf(parseISO(s)), 4));   // 預設到該週五
+        }
+
+        function afterSwimWeeksChanged() {
+            saveData();
+            renderSwimWeekList();
+            renderClassSchedule(currentClassId);
+            updateSubAvailableTeachers();
+        }
+
+        function addSwimWeek(e) {
+            e.preventDefault();
+            if (!requireAdmin('設定游泳週')) return;
+            const start = document.getElementById('swimStart').value;
+            const end = document.getElementById('swimEnd').value;
+            const note = document.getElementById('swimNote').value.trim();
+            if (!start || !end || start > end) { showToast("結束日不可早於起始日", "alert"); return; }
+            if (!inSchoolYear(start) || !inSchoolYear(end)) { showToast("日期需在 115 學年度內 (2026/08/01 – 2027/07/31)", "alert"); return; }
+            if (swimWeeks.some(w => start <= w.end && end >= w.start)) { showToast("與既有游泳週日期重疊", "alert"); return; }
+            swimWeeks.push({ id: Date.now(), start, end, note });
+            document.getElementById('swimForm').reset();
+            afterSwimWeeksChanged();
+            showToast("已新增游泳週");
+        }
+
+        function deleteSwimWeek(id) {
+            if (!requireAdmin('刪除游泳週')) return;
+            if (!confirm("確定要刪除這段游泳週嗎？該期間將改回使用一般週課表。")) return;
+            swimWeeks = swimWeeks.filter(w => w.id !== id);
+            afterSwimWeeksChanged();
+            showToast("已刪除游泳週", "alert");
+        }
+
+        // ===================== 權限：教務處 / 一般老師 =====================
+        // 教務處：可修改課表、刪除紀錄、清空/重置/匯入資料。一般老師：可查看、登記代課與調課、列印、匯出。
+        let CURRENT_ROLE = 'teacher';
+        let ROLE_MODE = 'pin';            // 'identity'＝依發佈頁的分享權限自動判定；'pin'＝教務處密碼
+        let roleModalMode = 'login';
+        const ADMIN_PIN_KEY = 'xinxing115_admin_pin_v1';
+        const ADMIN_SESSION_KEY = 'xinxing115_admin_session';
+        const isAdmin = () => CURRENT_ROLE === 'admin';
+        function requireAdmin(action) {
+            if (isAdmin()) return true;
+            showToast(`僅教務處可${action}`, "alert");
+            return false;
+        }
+
+        async function sha256Hex(text) {
+            const t = 'xinxing115:' + text;
+            try {
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+                return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                let h = 5381; for (const c of t) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0;
+                return 'x' + h;
+            }
+        }
+        const getStoredPin = () => { try { return localStorage.getItem(ADMIN_PIN_KEY); } catch (e) { return null; } };
+
+        function applyRole() {
+            document.body.classList.toggle('role-teacher', !isAdmin());
+            const b = document.getElementById('roleBadge');
+            if (b) {
+                b.innerText = isAdmin() ? '🛡️ 教務處' : (ROLE_MODE === 'pin' ? '👤 一般老師 · 教務處登入' : '👤 一般老師');
+                b.title = ROLE_MODE === 'identity' ? '身分依頁面分享權限自動判定：具編輯權限者為教務處' : '點選以登入／登出教務處';
+                b.classList.toggle('cursor-default', ROLE_MODE === 'identity');
+            }
+            if (typeof currentClassId !== 'undefined' && ALL_SCHEDULES) {
+                renderClassSchedule(currentClassId);
+                renderSubRecords();
+                renderSwapRecords();
+            }
+        }
+
+        async function initRole() {
+            let user = null;
+            try { user = (window.claude && window.claude.use) ? await window.claude.use('user') : null; } catch (e) { user = null; }
+            if (user) {
+                ROLE_MODE = 'identity';
+                let ok = false;
+                try { ok = !!(user.isOwner() || user.canEdit()); } catch (e) { ok = false; }
+                CURRENT_ROLE = ok ? 'admin' : 'teacher';
+            } else {
+                ROLE_MODE = 'pin';
+                let sess = null; try { sess = sessionStorage.getItem(ADMIN_SESSION_KEY); } catch (e) {}
+                CURRENT_ROLE = (sess === '1' && getStoredPin()) ? 'admin' : 'teacher';
+            }
+            applyRole();
+        }
+
+        function onRoleBadgeClick() {
+            if (ROLE_MODE === 'identity') {
+                showToast(isAdmin() ? "目前身分：教務處（依分享權限判定）" : "目前身分：一般老師（僅教務處可刪除、重置、修改課表）");
+                return;
+            }
+            if (isAdmin()) openRoleModal('admin');
+            else openRoleModal(getStoredPin() ? 'login' : 'set');
+        }
+
+        function openRoleModal(mode) {
+            roleModalMode = mode;
+            const $ = id => document.getElementById(id);
+            $('rolePin').value = ''; $('rolePin2').value = '';
+            $('roleFieldsAdmin').classList.toggle('hidden', mode !== 'admin');
+            $('roleFieldsPin').classList.toggle('hidden', mode === 'admin');
+            $('rolePin2').classList.toggle('hidden', mode !== 'set');
+            if (mode === 'login') {
+                $('roleModalTitle').innerText = '🛡️ 教務處登入';
+                $('roleModalDesc').innerText = '請輸入教務處密碼，以使用刪除、重置、匯入與修改課表等功能。';
+                $('roleSubmitBtn').innerText = '登入';
+            } else if (mode === 'set') {
+                $('roleModalTitle').innerText = getStoredPin() ? '🔑 變更教務處密碼' : '🔑 設定教務處密碼';
+                $('roleModalDesc').innerText = '請設定教務處密碼（至少 4 碼）。設定後，只有輸入密碼者能使用管理功能。';
+                $('roleSubmitBtn').innerText = '設定並登入';
+            } else {
+                $('roleModalTitle').innerText = '🛡️ 教務處（已登入）';
+                $('roleModalDesc').innerText = '目前以教務處身分使用中。';
+            }
+            $('roleModalNote').innerText = mode === 'admin' ? '' : '此為本機瀏覽器的簡易保護，用於避免誤操作，並非嚴格的資安機制。';
+            $('roleModal').classList.remove('hidden');
+            if (mode !== 'admin') setTimeout(() => $('rolePin').focus(), 50);
+        }
+        function closeRoleModal() { document.getElementById('roleModal').classList.add('hidden'); }
+
+        async function submitRoleForm(e) {
+            e.preventDefault();
+            const pin = document.getElementById('rolePin').value;
+            if (roleModalMode === 'login') {
+                if ((await sha256Hex(pin)) === getStoredPin()) {
+                    CURRENT_ROLE = 'admin';
+                    try { sessionStorage.setItem(ADMIN_SESSION_KEY, '1'); } catch (err) {}
+                    closeRoleModal(); applyRole(); showToast("已登入教務處");
+                } else {
+                    showToast("密碼錯誤", "alert");
+                }
+            } else if (roleModalMode === 'set') {
+                if (pin.length < 4) { showToast("密碼至少 4 碼", "alert"); return; }
+                if (pin !== document.getElementById('rolePin2').value) { showToast("兩次輸入的密碼不一致", "alert"); return; }
+                try { localStorage.setItem(ADMIN_PIN_KEY, await sha256Hex(pin)); } catch (err) { showToast("無法儲存密碼（瀏覽器禁止儲存）", "alert"); return; }
+                CURRENT_ROLE = 'admin';
+                try { sessionStorage.setItem(ADMIN_SESSION_KEY, '1'); } catch (err) {}
+                closeRoleModal(); applyRole(); showToast("教務處密碼已設定並登入");
+            }
+        }
+        function logoutAdmin() {
+            CURRENT_ROLE = 'teacher';
+            try { sessionStorage.removeItem(ADMIN_SESSION_KEY); } catch (e) {}
+            closeRoleModal(); applyRole(); showToast("已登出教務處");
+        }
+
+        function loadSavedData() {
+            let needSave = false;
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    ALL_SCHEDULES = parsed.schedules || generateDefaultSchedules();
+                    ALL_SWIM_SCHEDULES = parsed.swimSchedules || generateDefaultSwimSchedules();
+                    swimWeeks = Array.isArray(parsed.swimWeeks) ? parsed.swimWeeks : defaultSwimWeeks();
+                    if (Array.isArray(parsed.swimWeeks) && (parsed.swimDefaultsVersion || 0) < SWIM_DEFAULTS_VERSION) {
+                        // 補上新增的預設游泳週（與既有區間重疊者略過）
+                        defaultSwimWeeks().forEach(w => {
+                            if (!swimWeeks.some(x => w.start <= x.end && w.end >= x.start)) swimWeeks.push(w);
+                        });
+                        needSave = true;
+                    }
+                    subRecords = parsed.subRecords || [];
+                    swapRecords = parsed.swapRecords || [];
+                } else {
+                    ALL_SCHEDULES = generateDefaultSchedules();
+                    ALL_SWIM_SCHEDULES = generateDefaultSwimSchedules();
+                    swimWeeks = defaultSwimWeeks();
+                    saveData();
+                }
+            } catch (e) {
+                console.error("Error loading local data:", e);
+                ALL_SCHEDULES = generateDefaultSchedules();
+                ALL_SWIM_SCHEDULES = generateDefaultSwimSchedules();
+                swimWeeks = defaultSwimWeeks();
+            }
+            stripFixedMorning(ALL_SCHEDULES);
+            stripFixedMorning(ALL_SWIM_SCHEDULES);
+            if (needSave) saveData();
+        }
+
+        function clearCurrentClassSchedule() {
+            if (!requireAdmin('清空課表')) return;
+            const key = setKeyFor(toISO(viewWeekMonday));
+            const keyName = key === 'swim' ? '游泳週課表' : '一般週課表';
+            if (confirm(`確定要清空【${currentClassId}】${keyName}的所有課程與任課教師嗎？`)) {
+                schedSet(key)[currentClassId] = {};
+                saveData();
+                renderClassSchedule(currentClassId);
+                renderFreeMatrix();
+                showToast(`已清空【${currentClassId}】課表`, "alert");
+            }
+        }
+
+        function clearAllSchedules() {
+            if (!requireAdmin('清空全校資料')) return;
+            if (confirm("⚠️️ 確定要清空【全校所有班級】的課程與任課教師嗎？資料清空後可以重新開始手動排課。")) {
+                ALL_SCHEDULES = createEmptySchedules();
+                ALL_SWIM_SCHEDULES = createEmptySchedules();
+                subRecords = [];
+                swapRecords = [];
+                saveData();
+                renderClassSchedule(currentClassId);
+                renderFreeMatrix();
+                renderSubRecords();
+                renderSwapRecords();
+                showToast("已成功清空全校所有課程與教師！", "alert");
+            }
+        }
+
+        function saveData() {
+            try {
+                const payload = {
+                    schedules: ALL_SCHEDULES,
+                    swimSchedules: ALL_SWIM_SCHEDULES,
+                    swimWeeks,
+                    swimDefaultsVersion: SWIM_DEFAULTS_VERSION,
+                    subRecords,
+                    swapRecords,
+                    updatedAt: new Date().toISOString()
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            } catch (e) {
+                console.error("Save error:", e);
+            }
+        }
+
+        function getTeacherScheduleMatrix(teacherName, date, setOverride) {
+            const busy = {};
+            for (let d = 1; d <= 5; d++) {
+                busy[d] = {};
+                for (let p = 0; p <= 7; p++) busy[d][p] = false;
+            }
+
+            for (let p = 5; p <= 7; p++) busy[3][p] = true; // Wednesday afternoon off
+            busy[1][0] = true; busy[2][0] = true;            // 週一教師晨會、週二兒童朝會：全校固定
+
+            const SC = setOverride || schedFor(date);   // 指定日期落在游泳週時，改用游泳週課表
+            Object.keys(SC).forEach(cId => {
+                const sched = SC[cId];
+                for (let d = 1; d <= 5; d++) {
+                    for (let p = 0; p <= 7; p++) {
+                        if (sched[d] && sched[d][p] && sched[d][p].teacher === teacherName) {
+                            busy[d][p] = true;
+                        }
+                    }
+                }
+            });
+            // 已指派的代課也算作該教師的忙碌時段，避免重複派課
+            // 有指定日期時：只計入同一天的代課（及舊版無日期紀錄）；未指定日期（週課表樣式）：只計入舊版無日期紀錄
+            subRecords.forEach(r => {
+                const applies = date ? (!r.date || r.date === date) : !r.date;
+                if (applies && r.subTeacher === teacherName && busy[r.day]) busy[r.day][r.period] = true;
+            });
+            return busy;
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('tab-active');
+                el.classList.add('bg-white/10');
+            });
+
+            document.getElementById(`sec-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('tab-active');
+            activeBtn.classList.remove('bg-white/10');
+
+            lucide.createIcons();
+        }
+
+        function toggleLanguage() {
+            isEnglish = !isEnglish;
+            document.getElementById('langText').innerText = isEnglish ? '中文模式' : '中/英 雙語對照';
+            renderClassSchedule(currentClassId);
+            showToast(isEnglish ? "Switched to Bilingual Mode" : "已切換為中文模式");
+        }
+
+        function toggleDataMenu() {
+            const menu = document.getElementById('dataMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Close dropdown when clicked outside
+        window.onclick = function(e) {
+            if (!e.target.closest('.dropdown')) {
+                const menu = document.getElementById('dataMenu');
+                if (menu && !menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                }
+            }
+        }
+
+        function renderClassSelector() {
+            const container = document.getElementById('classSelectorList');
+            container.innerHTML = '';
+            HOMEROOM_TEACHERS.forEach(item => {
+                const btn = document.createElement('button');
+                const isActive = item.classId === currentClassId;
+                btn.className = `px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    isActive ? 'bg-sky-600 text-white shadow-sm scale-105' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`;
+                btn.innerText = item.classId;
+                btn.onclick = () => {
+                    currentClassId = item.classId;
+                    renderClassSelector();
+                    renderClassSchedule(currentClassId);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderClassSchedule(classId) {
+            const hrInfo = HOMEROOM_TEACHERS.find(h => h.classId === classId);
+            document.getElementById('selectedClassBadge').innerText = classId;
+            document.getElementById('selectedClassHomeroom').innerText = `${hrInfo ? hrInfo.teacher : ''} 老師`;
+
+            const tbody = document.getElementById('classScheduleBody');
+            tbody.innerHTML = '';
+
+            // 本週五天的準確日期
+            const weekDates = [1, 2, 3, 4, 5].map(i => toISO(addDays(viewWeekMonday, i - 1)));
+            const todayISO = toISO(new Date());
+            const dayNamesEn = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+            weekDates.forEach((ds, idx) => {
+                const th = document.getElementById('thDay' + (idx + 1));
+                if (!th) return;
+                const isToday = ds === todayISO;
+                th.className = `py-3 px-2 w-1/5 ${isToday ? 'bg-sky-100 text-sky-800' : ''}`;
+                th.innerHTML = `星期${WEEKDAY_ZH[idx + 1]} (${dayNamesEn[idx + 1]})<div class="text-[11px] font-mono font-semibold ${isToday ? 'text-sky-700' : 'text-slate-400'}">${ds.slice(5).replace('-', '/')}${isToday ? ' 今天' : ''}</div>${isSwimDate(ds) ? '<div class="text-[10px] font-bold text-cyan-700">🏊 游泳週</div>' : ''}`;
+            });
+            document.getElementById('swimBadge').classList.toggle('hidden', !weekDates.some(isSwimDate));
+            document.getElementById('weekRangeLabel').innerText = `${fmtDate(weekDates[0])} – ${fmtDate(weekDates[4])}`;
+            document.getElementById('weekNote').classList.toggle('hidden', inSchoolYear(weekDates[0]) || inSchoolYear(weekDates[4]));
+            document.getElementById('weekPicker').value = weekDates[0];
+
+            PERIOD_TIMES.forEach(pt => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition';
+
+                let tdTime = `<td class="py-3 px-2 border-r border-slate-200 font-medium bg-slate-50/50 text-slate-600">
+                    <div class="font-bold text-xs sm:text-sm">${periodLabelSp(pt.period)}</div>
+                    <div class="text-[10px] text-slate-400 font-mono">${pt.time}</div>
+                </td>`;
+
+                let tdDays = '';
+                for (let d = 1; d <= 5; d++) {
+                    const sched = schedFor(weekDates[d - 1])[classId] || {};
+                    const cell = sched[d] ? sched[d][pt.period] : null;
+
+                    if (isFixedSlot(d, pt.period, classId)) {
+                        const fx = FIXED_MORNING[d];
+                        tdDays += `<td onclick="showToast('${fx.name}為全校固定活動，無法編輯', 'alert')" class="py-2.5 px-2 bg-indigo-50/70 cursor-not-allowed" title="全校固定，不可編輯">
+                            <div class="font-bold text-indigo-800 text-xs sm:text-sm">🔒 ${isEnglish ? `${fx.name} (${fx.nameEn})` : fx.name}</div>
+                            <div class="text-[10px] text-indigo-500 font-semibold">${isEnglish ? 'Whole school' : '全校固定'}</div>
+                        </td>`;
+                    } else if (d === 3 && pt.period > 4) {
+                        tdDays += `<td class="py-3 px-2 bg-slate-100/50 text-slate-400 text-xs italic">無排課 / 下課</td>`;
+                    } else if (cell && cell.name) {
+                        const nameDisplay = isEnglish ? `${cell.name} (${cell.nameEn || ''})` : cell.name;
+                        const isHomeroom = hrInfo && cell.teacher === hrInfo.teacher;
+                        const isSpecialBound = cell.name.startsWith('★');
+
+                        const hasSub = subRecords.find(s => s.teacher === cell.teacher && parseInt(s.day) === d && parseInt(s.period) === pt.period && (!s.date || s.date === weekDates[d - 1]));
+                        const subTag = hasSub ? `<div class="mt-1 text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded-md inline-block">🔄 代課: ${subLabel(hasSub)}</div>` : '';
+
+                        tdDays += `<td ${isAdmin() ? `onclick="openEditModal('${classId}', ${d}, ${pt.period})"` : ''} class="py-2.5 px-2 ${isAdmin() ? 'cursor-pointer hover:bg-sky-50/80' : ''} transition rounded-lg group">
+                            <div class="font-bold ${isSpecialBound ? 'text-amber-700' : 'text-slate-800'} text-xs sm:text-sm group-hover:text-sky-600 transition">${nameDisplay}</div>
+                            <div class="text-xs ${isHomeroom ? 'text-slate-500' : 'text-sky-600 font-semibold'}">${cell.teacher || '-'}</div>
+                            ${cell.room ? `<div class="text-[10px] text-slate-400">${cell.room}</div>` : ''}
+                            ${subTag}
+                        </td>`;
+                    } else {
+                        tdDays += `<td ${isAdmin() ? `onclick="openEditModal('${classId}', ${d}, ${pt.period})"` : ''} class="py-3 px-2 text-slate-300 ${isAdmin() ? 'hover:bg-sky-50 cursor-pointer' : ''} text-xs transition">
+                            ${isAdmin() ? '<span class="opacity-0 hover:opacity-100 text-sky-500 font-bold">+ 新增</span>' : ''}
+                        </td>`;
+                    }
+                }
+
+                tr.innerHTML = tdTime + tdDays;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function shiftWeek(n) { viewWeekMonday = addDays(viewWeekMonday, n * 7); renderClassSchedule(currentClassId); }
+        function goThisWeek() {
+            const t = new Date(); const w = t.getDay();
+            viewWeekMonday = mondayOf(w === 0 ? addDays(t, 1) : (w === 6 ? addDays(t, 2) : t));
+            renderClassSchedule(currentClassId);
+        }
+        function jumpToDate(v) {
+            if (!v) return;
+            const d = parseISO(v); const w = d.getDay();
+            viewWeekMonday = mondayOf(w === 0 ? addDays(d, 1) : (w === 6 ? addDays(d, 2) : d));
+            renderClassSchedule(currentClassId);
+        }
+
+        function openEditModal(classId, day, period) {
+            if (!requireAdmin('修改課表')) return;
+            if (isFixedSlot(day, period, classId)) { showToast(fixedSlotText(day), "alert"); return; }
+            document.getElementById('editClassId').value = classId;
+            document.getElementById('editDay').value = day;
+            document.getElementById('editPeriod').value = period;
+
+            const setKey = setKeyFor(toISO(addDays(viewWeekMonday, parseInt(day) - 1)));
+            document.getElementById('editSet').value = setKey;
+            document.getElementById('editModalTitle').innerText = setKey === 'swim' ? '✏️ 編輯課程單元格（🏊 游泳週課表）' : '✏️ 編輯課程單元格';
+            const SC = schedSet(setKey);
+            const cell = (SC[classId] && SC[classId][day]) ? SC[classId][day][period] : null;
+
+            document.getElementById('editSubjectZh').value = cell ? (cell.name || '') : '';
+            document.getElementById('editSubjectEn').value = cell ? (cell.nameEn || '') : '';
+            document.getElementById('editTeacher').value = cell ? (cell.teacher || '') : '';
+            document.getElementById('editRoom').value = cell ? (cell.room || '') : '';
+
+            document.getElementById('editCourseModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editCourseModal').classList.add('hidden');
+        }
+
+        function saveCourseEdit(e) {
+            e.preventDefault();
+            if (!requireAdmin('修改課表')) return;
+            const classId = document.getElementById('editClassId').value;
+            const day = document.getElementById('editDay').value;
+            const period = document.getElementById('editPeriod').value;
+
+            const SC = schedSet(document.getElementById('editSet').value || 'regular');
+            if (!SC[classId]) SC[classId] = {};
+            if (!SC[classId][day]) SC[classId][day] = {};
+
+            SC[classId][day][period] = {
+                name: document.getElementById('editSubjectZh').value,
+                nameEn: document.getElementById('editSubjectEn').value,
+                teacher: document.getElementById('editTeacher').value,
+                room: document.getElementById('editRoom').value
+            };
+
+            saveData();
+            renderClassSchedule(currentClassId);
+            renderFreeMatrix();
+            closeEditModal();
+            showToast("課程更新成功！");
+        }
+
+        function clearCourseCell() {
+            if (!requireAdmin('清空課程')) return;
+            const classId = document.getElementById('editClassId').value;
+            const day = document.getElementById('editDay').value;
+            const period = document.getElementById('editPeriod').value;
+
+            const SC = schedSet(document.getElementById('editSet').value || 'regular');
+            if (SC[classId] && SC[classId][day]) {
+                delete SC[classId][day][period];
+            }
+
+            saveData();
+            renderClassSchedule(currentClassId);
+            renderFreeMatrix();
+            closeEditModal();
+            showToast("已清空該單元格課程", "alert");
+        }
+
+        function setFreeMatrixSet(key) {
+            FREE_MATRIX_SET = key;
+            renderFreeMatrix();
+        }
+
+        function renderFreeMatrix() {
+            const on = 'bg-cyan-600 text-white', off = 'bg-slate-100 text-slate-600 hover:bg-slate-200';
+            const bR = document.getElementById('fmBtnRegular'), bS = document.getElementById('fmBtnSwim');
+            if (bR && bS) {
+                bR.className = `px-3 py-1 rounded-lg font-semibold transition ${FREE_MATRIX_SET === 'regular' ? on : off}`;
+                bS.className = `px-3 py-1 rounded-lg font-semibold transition ${FREE_MATRIX_SET === 'swim' ? on : off}`;
+            }
+            const tbody = document.getElementById('subjectTeacherFreeMatrix');
+            tbody.innerHTML = '';
+
+            const freeCounts = {};
+            for (let d = 1; d <= 5; d++) {
+                freeCounts[d] = {};
+                for (let p = 0; p <= 7; p++) freeCounts[d][p] = 0;
+            }
+
+            SUBJECT_TEACHERS.forEach(st => {
+                const busy = getTeacherScheduleMatrix(st.name, null, schedSet(FREE_MATRIX_SET));
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+
+                let rowHtml = `<td class="py-2.5 px-2 font-bold border-r border-slate-200 text-slate-800">${st.name}</td>
+                               <td class="py-2.5 px-2 border-r border-slate-200"><span class="text-[10px] ${st.color} px-2 py-0.5 rounded-full font-bold">${st.subject}</span></td>`;
+
+                for (let d = 1; d <= 5; d++) {
+                    rowHtml += `<td class="py-1 px-1"><div class="flex justify-center space-x-0.5">`;
+                    for (let p = 0; p <= 7; p++) {
+                        if (d === 3 && p > 4) {
+                            rowHtml += `<span class="w-3.5 h-3.5 bg-slate-100 rounded-xs inline-block"></span>`;
+                            continue;
+                        }
+                        const isFree = !busy[d][p];
+                        if (isFree) {
+                            freeCounts[d][p]++;
+                            rowHtml += `<span title="週${d} ${periodLabel(p)} 空堂" class="w-3.5 h-3.5 bg-emerald-400 rounded-xs inline-block shadow-xs"></span>`;
+                        } else {
+                            rowHtml += `<span class="w-3.5 h-3.5 bg-slate-200 rounded-xs inline-block"></span>`;
+                        }
+                    }
+                    rowHtml += `</div></td>`;
+                }
+
+                tr.innerHTML = rowHtml;
+                tbody.appendChild(tr);
+            });
+
+            // Calculate Hotspots
+            let h1 = { day: 1, p: 0, count: -1 };
+            let h2 = { day: 2, p: 0, count: -1 };
+
+            for (let d = 1; d <= 5; d++) {
+                const maxP = (d === 3) ? 4 : 7;
+                for (let p = 0; p <= maxP; p++) {
+                    const cnt = freeCounts[d][p];
+                    if (cnt > h1.count) {
+                        h2 = { ...h1 };
+                        h1 = { day: d, p, count: cnt };
+                    } else if (cnt > h2.count) {
+                        h2 = { day: d, p, count: cnt };
+                    }
+                }
+            }
+
+            const dayNames = ["", "一", "二", "三", "四", "五"];
+            document.getElementById('hotspot1').innerText = `週${dayNames[h1.day]} ${periodLabelSp(h1.p)} (${h1.count}位空堂)`;
+            document.getElementById('hotspot2').innerText = `週${dayNames[h2.day]} ${periodLabelSp(h2.p)} (${h2.count}位空堂)`;
+        }
+
+        function populateSubTeacherDropdowns() {
+            const origSelect = document.getElementById('subOriginalTeacher');
+            origSelect.innerHTML = '<option value="">請選擇請假教師...</option>';
+
+            const allTeachers = [
+                ...HOMEROOM_TEACHERS.map(h => ({ name: h.teacher, type: `導師 (${h.classId})` })),
+                ...SUBJECT_TEACHERS.map(s => ({ name: s.name, type: `科任 (${s.subject})` }))
+            ];
+
+            allTeachers.forEach(t => {
+                origSelect.appendChild(new Option(`${t.name} - ${t.type}`, t.name));
+            });
+
+            const swapA = document.getElementById('swapTeacherA');
+            const swapB = document.getElementById('swapTeacherB');
+            swapA.innerHTML = '<option value="">選擇教師 A...</option>';
+            swapB.innerHTML = '<option value="">選擇教師 B...</option>';
+
+            allTeachers.forEach(t => {
+                swapA.appendChild(new Option(`${t.name} (${t.type})`, t.name));
+                swapB.appendChild(new Option(`${t.name} (${t.type})`, t.name));
+            });
+        }
+
+        const CUSTOM_SUB_VALUE = '__custom__';
+        const subLabel = r => r.subExternal ? `${r.subTeacher}（臨時校外）` : r.subTeacher;
+
+        const SUB_CHIP_BASE = 'period-chip flex items-center px-2 py-1.5 rounded-lg border select-none text-[11px]';
+        const subMsg = t => `<p class="text-[11px] text-indigo-700/80">${t}</p>`;
+        const periodsTeacherTeaches = (teacher, day, date) => PERIOD_TIMES.map(x => String(x.period))
+            .filter(p => !isFixedForTeacher(day, p, teacher) && !(day === '3' && parseInt(p) > 4) && teacherHasClassAt(teacher, day, p, date));
+
+        function teacherHasClassAt(teacher, day, period, date) {
+            const SC = schedFor(date);
+            return Object.keys(SC).some(c => {
+                const cell = SC[c][day] && SC[c][day][period];
+                return cell && cell.teacher === teacher;
+            });
+        }
+        const getCheckedSubPeriods = () => [...document.querySelectorAll('#subPeriodChecks input:checked')].map(i => i.value).sort((a, b) => a - b);
+
+        function updateSubPeriodChips(origTeacher, date, day) {
+            document.querySelectorAll('#subPeriodChecks label').forEach(lb => {
+                const inp = lb.querySelector('input');
+                const p = inp.value;
+                let cls = 'border-slate-200 bg-white text-slate-500 cursor-pointer';
+                let disabled = false, title = '';
+                if (origTeacher && date && day !== '0') {
+                    if (isFixedForTeacher(day, p, origTeacher)) { disabled = true; title = '全校固定活動，無需代課'; }
+                    else if (day === '3' && parseInt(p) > 4) { disabled = true; title = '週三下午無課'; }
+                    else if (teacherHasClassAt(origTeacher, day, p, date)) cls = 'border-indigo-300 bg-indigo-50 text-indigo-800 font-bold cursor-pointer';
+                }
+                inp.disabled = disabled;
+                if (disabled) inp.checked = false;
+                lb.className = `${SUB_CHIP_BASE} ${disabled ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed' : cls}`;
+                lb.title = title;
+            });
+        }
+
+        function selectTeacherPeriods() {
+            const origTeacher = document.getElementById('subOriginalTeacher').value;
+            const date = document.getElementById('subDate').value;
+            if (!origTeacher || !date) { showToast("請先選擇請假教師與日期", "alert"); return; }
+            const day = String(dayOfDate(date));
+            if (day === '0') { showToast("所選日期為週末，無課程", "alert"); return; }
+            const mine = periodsTeacherTeaches(origTeacher, day, date);
+            document.querySelectorAll('#subPeriodChecks input').forEach(i => { i.checked = mine.includes(i.value); });
+            updateSubAvailableTeachers();
+            if (mine.length === 0) showToast("該教師當天沒有課程", "alert");
+        }
+        function clearSubPeriods() {
+            document.querySelectorAll('#subPeriodChecks input').forEach(i => { i.checked = false; });
+            updateSubAvailableTeachers();
+        }
+
+        function onSubRowChange(sel) {
+            const input = sel.closest('.sub-row').querySelector('.sub-custom');
+            const isCustom = sel.value === CUSTOM_SUB_VALUE;
+            input.classList.toggle('hidden', !isCustom);
+            if (isCustom) input.focus();
+        }
+
+        // 單一節次的推薦代課清單
+        function buildSubRow(origTeacher, date, day, period, prev) {
+            const info = subClassInfo({ teacher: origTeacher, day, period, date });
+            const row = document.createElement('div');
+            row.className = 'sub-row bg-white border border-indigo-100 rounded-lg p-2 space-y-1.5';
+            row.dataset.period = period;
+            const head = document.createElement('div');
+            head.className = 'text-[11px] font-bold text-indigo-900';
+            head.innerText = `${periodLabelSp(period)} ${periodTimeText(period)}` + (info.cls ? ` · ${info.cls} ${info.subject}` : ' · （該教師此節無課）');
+            row.appendChild(head);
+
+            const SCd = schedFor(date);
+            const targetClasses = Object.keys(SCd).filter(cId => {
+                const cell = SCd[cId][day] && SCd[cId][day][period];
+                return cell && cell.teacher === origTeacher;
+            });
+            const subCount = name => subRecords.filter(r => r.subTeacher === name).length;
+            const isFree = name => name !== origTeacher && !getTeacherScheduleMatrix(name, date)[day][period];
+            const subjectFree = SUBJECT_TEACHERS.filter(st => isFree(st.name));
+
+            const sel = document.createElement('select');
+            sel.className = 'sub-select w-full p-2 rounded-lg border border-indigo-200 bg-white font-medium text-indigo-950 outline-none text-xs';
+            sel.onchange = () => onSubRowChange(sel);
+            const addGroup = (label, items) => {
+                if (items.length === 0) return;
+                const g = document.createElement('optgroup');
+                g.label = label;
+                items.forEach(i => g.appendChild(new Option(i.text, i.value)));
+                sel.appendChild(g);
+            };
+            const total = subjectFree.length;
+            if (total === 0) sel.appendChild(new Option("⚠️ 此時段科任教師皆有課，建議手動安排外聘代課", ""));
+            addGroup("📚 科任教師 (無課空堂)", subjectFree.map(st => ({ value: st.name, text: `✨ ${st.name} 老師 (${st.subject}，已代課 ${subCount(st.name)} 次)` })));
+            addGroup("✍️ 其他", [{ value: CUSTOM_SUB_VALUE, text: "自行輸入（臨時校外人員）" }]);
+            row.appendChild(sel);
+
+            const input = document.createElement('input');
+            input.type = 'text'; input.maxLength = 30; input.autocomplete = 'off';
+            input.placeholder = '請輸入臨時校外代課人員姓名';
+            input.className = 'sub-custom hidden w-full p-2 rounded-lg border border-amber-300 bg-amber-50 font-medium text-slate-800 outline-none focus:ring-2 focus:ring-amber-400 text-xs';
+            row.appendChild(input);
+
+            // 還原先前的選擇；無人有空時直接切到自行輸入
+            if (prev && [...sel.options].some(o => o.value === prev.value)) { sel.value = prev.value; input.value = prev.custom || ''; }
+            else if (total === 0) sel.value = CUSTOM_SUB_VALUE;
+            onSubRowChange(sel);
+            if (!input.classList.contains('hidden')) input.blur();
+            return row;
+        }
+
+        function updateSubApplyAll() {
+            const wrap = document.getElementById('subApplyAllWrap');
+            const sel = document.getElementById('subApplyAll');
+            const rows = [...document.querySelectorAll('#subAssignRows .sub-row')];
+            if (rows.length < 2) { wrap.classList.add('hidden'); return; }
+            const sets = rows.map(r => new Set([...r.querySelectorAll('.sub-select option')].map(o => o.value).filter(v => v && v !== CUSTOM_SUB_VALUE)));
+            const common = [...sets[0]].filter(v => sets.every(st => st.has(v)));
+            sel.innerHTML = '';
+            sel.appendChild(new Option(common.length ? `⚡ 一鍵套用：全部節次由同一位代課 (${common.length} 位皆有空)` : '⚠️ 沒有人在所有勾選節次都有空，請逐節選擇', ''));
+            common.forEach(v => sel.appendChild(new Option(`${v} 老師`, v)));
+            wrap.classList.remove('hidden');
+        }
+        function applySubToAll(name) {
+            if (!name) return;
+            document.querySelectorAll('#subAssignRows .sub-row .sub-select').forEach(sel => {
+                if ([...sel.options].some(o => o.value === name)) { sel.value = name; onSubRowChange(sel); }
+            });
+        }
+
+        function updateSubAvailableTeachers() {
+            const origTeacher = document.getElementById('subOriginalTeacher').value;
+            const date = document.getElementById('subDate').value;
+            const day = date ? String(dayOfDate(date)) : '';
+            const box = document.getElementById('subAssignRows');
+            const dayLabel = document.getElementById('subDateDay');
+
+            // 記住已選內容，重建後還原
+            const prev = {};
+            box.querySelectorAll('.sub-row').forEach(r => { prev[r.dataset.period] = { value: r.querySelector('.sub-select').value, custom: r.querySelector('.sub-custom').value }; });
+
+            dayLabel.innerText = date ? (day === '0' ? '⚠️ 週末非上課日' : `(星期${WEEKDAY_ZH[day]})${isSwimDate(date) ? ' 🏊 游泳週課表' : ''}`) : '';
+            updateSubPeriodChips(origTeacher, date, day);
+            box.innerHTML = '';
+            document.getElementById('subApplyAllWrap').classList.add('hidden');
+
+            if (!origTeacher || !date) { box.innerHTML = subMsg("請先選擇請假教師、日期與節次..."); return; }
+            if (day === '0') { box.innerHTML = subMsg("所選日期為週末，無課程"); return; }
+            const periods = getCheckedSubPeriods();
+            if (periods.length === 0) { box.innerHTML = subMsg("請勾選請假節次（可複選）"); return; }
+            periods.forEach(p => box.appendChild(buildSubRow(origTeacher, date, day, p, prev[p])));
+            updateSubApplyAll();
+        }
+
+        function setDefaultSubDate() {
+            const el = document.getElementById('subDate');
+            if (!el) return;
+            const t = new Date(); const w = t.getDay();
+            let d = toISO(w === 0 ? addDays(t, 1) : (w === 6 ? addDays(t, 2) : t));
+            if (d < SCHOOL_YEAR_START) d = SCHOOL_YEAR_START;
+            if (d > SCHOOL_YEAR_END) d = SCHOOL_YEAR_END;
+            el.value = d;
+        }
+
+        function handleSubSubmit(e) {
+            e.preventDefault();
+            const origTeacher = document.getElementById('subOriginalTeacher').value;
+            const date = document.getElementById('subDate').value;
+            const reason = document.getElementById('subReason').value;
+
+            if (!origTeacher) { showToast("請選擇請假教師", "alert"); return; }
+            if (!date || !inSchoolYear(date)) {
+                showToast("請填寫 115 學年度內的日期 (2026/08/01 – 2027/07/31)", "alert");
+                return;
+            }
+            const day = String(dayOfDate(date));
+            if (day === '0') { showToast("所選日期為週末，無課程可代課", "alert"); return; }
+
+            const rows = [...document.querySelectorAll('#subAssignRows .sub-row')];
+            if (rows.length === 0) { showToast("請至少勾選一個請假節次", "alert"); return; }
+
+            // 先全部檢核，任一節有問題就整批不登記
+            const items = [];
+            for (const row of rows) {
+                const period = row.dataset.period;
+                const lbl = periodLabel(period);
+                const val = row.querySelector('.sub-select').value;
+                const isExternal = val === CUSTOM_SUB_VALUE;
+                const subTeacher = isExternal ? row.querySelector('.sub-custom').value.trim() : val;
+                if (isFixedForTeacher(day, period, origTeacher)) { showToast(`${lbl}：${fixedSlotText(day)}`, "alert"); return; }
+                if (subRecords.some(r => r.teacher === origTeacher && r.date === date && String(r.period) === String(period))) {
+                    showToast(`${lbl}：該教師這一天這一節已有代課登記`, "alert"); return;
+                }
+                if (isExternal && !subTeacher) { showToast(`${lbl}：請輸入臨時校外代課人員姓名`, "alert"); return; }
+                if (isExternal && subTeacher === origTeacher) { showToast(`${lbl}：代課人員不可與請假教師相同`, "alert"); return; }
+                if (!subTeacher) { showToast(`${lbl}：請選擇有效的代課人員`, "alert"); return; }
+                items.push({ period, subTeacher, isExternal });
+            }
+
+            const base = Date.now();
+            const records = items.map((it, i) => ({
+                id: base + i,
+                teacher: origTeacher,
+                date,
+                day,
+                period: it.period,
+                reason,
+                subTeacher: it.subTeacher,
+                subExternal: it.isExternal,
+                classInfo: subClassInfo({ teacher: origTeacher, day, period: it.period, date })
+            }));
+            subRecords.unshift(...records);
+            saveData();
+            renderSubRecords();
+            renderClassSchedule(currentClassId);
+            showToast(records.length > 1 ? `代課登記成功！共 ${records.length} 節，已同步連動全校課表` : "代課登記成功！已同步連動全校課表");
+            document.getElementById('subForm').reset();
+            document.getElementById('subAssignRows').innerHTML = '';
+            setDefaultSubDate();
+            updateSubAvailableTeachers();
+        }
+
+        function renderSubRecords() {
+            const tbody = document.getElementById('subRecordList');
+            document.getElementById('subRecordCount').innerText = `共 ${subRecords.length} 筆`;
+            tbody.innerHTML = '';
+
+            if (subRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">目前尚無代課登記紀錄</td></tr>`;
+                return;
+            }
+
+            subRecords.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-medium">${r.date ? `<div class="font-mono">${fmtDate(r.date)}</div><div class="text-slate-500">週${WEEKDAY_ZH[parseISO(r.date).getDay()]} ${periodLabel(r.period)}</div>` : `週${r.day} ${periodLabel(r.period)}<div class="text-[10px] text-slate-400">(舊紀錄·每週)</div>`}</td>
+                    <td class="p-3 font-bold text-slate-700">${r.teacher}</td>
+                    <td class="p-3 font-bold text-indigo-600">${r.subTeacher}${r.subExternal ? '<div class="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-1.5 inline-block mt-0.5">臨時校外</div>' : ''}</td>
+                    <td class="p-3 text-slate-500">${r.reason}</td>
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="printSubNotice(${r.id})" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-semibold transition">
+                            🖨️ 派課單
+                        </button>
+                        <button onclick="deleteSubRecord(${r.id})" class="admin-only text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 px-2 py-1 rounded-lg font-semibold transition">
+                            刪除
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteSubRecord(id) {
+            if (!requireAdmin('刪除代課紀錄')) return;
+            subRecords = subRecords.filter(r => r.id !== id);
+            saveData();
+            renderSubRecords();
+            renderClassSchedule(currentClassId);
+            showToast("已刪除該筆代課紀錄", "alert");
+        }
+
+        function printSubNotice(id) {
+            const rec = subRecords.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('printFormTitle').innerText = "教師派課 / 代課通知單";
+            document.getElementById('printFormContent').innerHTML = `
+                <div class="grid grid-cols-2 gap-4 border p-4 rounded-lg bg-gray-50 text-xs">
+                    <div><strong>請假教師 (原任課)：</strong> ${rec.teacher} 老師</div>
+                    <div><strong>代課人員 (派課)：</strong> ${rec.subExternal ? rec.subTeacher + '（臨時校外人員）' : rec.subTeacher + ' 老師'}</div>
+                    <div><strong>代課日期：</strong> ${rec.date ? fmtDateWithDay(rec.date) : '週' + rec.day + ' (舊紀錄未登錄日期)'}</div>
+                    <div><strong>代課節次：</strong> ${periodLabelSp(rec.period)}${PERIOD_TIMES.find(x => String(x.period) === String(rec.period)) ? ' (' + PERIOD_TIMES.find(x => String(x.period) === String(rec.period)).time + ')' : ''}</div>
+                    <div><strong>填單日期：</strong> ${fmtDate(toISO(new Date()))}</div>
+                    <div><strong>假別事由：</strong> ${rec.reason}</div>
+                </div>
+                <p class="text-xs text-gray-600 mt-4">請代課教師依指定時段至該班級進行教學，並於課後至教務處教學組簽章領取代課鐘點費。</p>
+            `;
+
+            window.print();
+        }
+
+        const swapSetKey = () => (document.getElementById('swapSetSel') && document.getElementById('swapSetSel').value) || 'regular';
+        function onSwapSetChange() {
+            ['A', 'B'].forEach(w => { document.getElementById('swapDate' + w).value = ''; });
+            updateTeacherASlots();
+            updateTeacherBSlots();
+        }
+
+        function updateTeacherASlots() {
+            const teacherA = document.getElementById('swapTeacherA').value;
+            const slotA = document.getElementById('swapSlotA');
+            slotA.innerHTML = '<option value="">選擇原授課時段...</option>';
+
+            if (!teacherA) return;
+
+            const SC = schedSet(swapSetKey());
+            Object.keys(SC).forEach(cId => {
+                const sched = SC[cId];
+                for (let d = 1; d <= 5; d++) {
+                    for (let p = 0; p <= 7; p++) {
+                        if (sched[d] && sched[d][p] && sched[d][p].teacher === teacherA) {
+                            slotA.appendChild(new Option(`${cId} - 週${d} ${periodLabel(p)} (${sched[d][p].name})`, `${cId},${d},${p},${sched[d][p].name}`));
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTeacherBSlots() {
+            const teacherB = document.getElementById('swapTeacherB').value;
+            const slotB = document.getElementById('swapSlotB');
+            slotB.innerHTML = '<option value="">選擇對調時段...</option>';
+
+            if (!teacherB) return;
+
+            const SC = schedSet(swapSetKey());
+            Object.keys(SC).forEach(cId => {
+                const sched = SC[cId];
+                for (let d = 1; d <= 5; d++) {
+                    for (let p = 0; p <= 7; p++) {
+                        if (sched[d] && sched[d][p] && sched[d][p].teacher === teacherB) {
+                            slotB.appendChild(new Option(`${cId} - 週${d} ${periodLabel(p)} (${sched[d][p].name})`, `${cId},${d},${p},${sched[d][p].name}`));
+                        }
+                    }
+                }
+            });
+        }
+
+        // 選好時段後，自動帶入該星期最近的日期（可再修改）
+        function suggestSwapDate(which) {
+            const val = document.getElementById('swapSlot' + which).value;
+            if (!val) return;
+            const day = parseInt(val.split(',')[1]);
+            const input = document.getElementById('swapDate' + which);
+            input.value = nextDateForDay(day, swapSetKey());
+        }
+
+        // ===== 刪除調課紀錄（可選擇是否一併還原課表）=====
+        let pendingSwapDeleteId = null;
+        const swapCell = (cls, d, p, key) => { const SC = schedSet(key || 'regular'); return SC[cls] && SC[cls][d] && SC[cls][d][p]; };
+        const cellIs = (c, name, teacher) => !!c && c.name === name && c.teacher === teacher;
+        // 只有兩個時段目前仍維持「調課後」的內容，才能安全還原
+        const canRevertSwap = r => cellIs(swapCell(r.classA, r.dayA, r.pA, r.scheduleSet), r.subB, r.teacherB) && cellIs(swapCell(r.classB, r.dayB, r.pB, r.scheduleSet), r.subA, r.teacherA);
+        function findNameEn(name) {
+            for (const c of Object.keys(ALL_SCHEDULES)) for (const d of Object.keys(ALL_SCHEDULES[c])) for (const p of Object.keys(ALL_SCHEDULES[c][d])) {
+                const cell = ALL_SCHEDULES[c][d][p];
+                if (cell && cell.name === name && cell.nameEn) return cell.nameEn;
+            }
+            return '';
+        }
+
+        function askDeleteSwap(id) {
+            if (!requireAdmin('刪除調課紀錄')) return;
+            const r = swapRecords.find(x => x.id === id);
+            if (!r) return;
+            pendingSwapDeleteId = id;
+            document.getElementById('deleteSwapSummary').innerHTML = `
+                <div><strong>${r.teacherA}</strong>：${r.dateA ? fmtDate(r.dateA) + ' ' : ''}${r.classA} 週${r.dayA}${periodLabel(r.pA)} (${r.subA})</div>
+                <div><strong>${r.teacherB}</strong>：${r.dateB ? fmtDate(r.dateB) + ' ' : ''}${r.classB} 週${r.dayB}${periodLabel(r.pB)} (${r.subB})</div>
+                <div class="text-slate-500">事由：${r.reason}</div>`;
+            const ok = canRevertSwap(r);
+            document.getElementById('btnDeleteRevert').disabled = !ok;
+            document.getElementById('deleteSwapHint').innerHTML = ok
+                ? '<span class="text-slate-500">還原後，兩個時段會回到調課前的授課教師與科目。</span>'
+                : '<span class="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 block">⚠️ 這兩個時段在調課後又被修改過，無法自動還原，只能刪除紀錄。</span>';
+            document.getElementById('deleteSwapModal').classList.remove('hidden');
+        }
+
+        function closeDeleteSwapModal() {
+            document.getElementById('deleteSwapModal').classList.add('hidden');
+            pendingSwapDeleteId = null;
+        }
+
+        function confirmDeleteSwap(revert) {
+            if (!requireAdmin('刪除調課紀錄')) { closeDeleteSwapModal(); return; }
+            const r = swapRecords.find(x => x.id === pendingSwapDeleteId);
+            if (!r) { closeDeleteSwapModal(); return; }
+            let reverted = false;
+            if (revert && canRevertSwap(r)) {
+                const mk = (name, teacher) => { const c = { name, teacher }; const en = findNameEn(name); if (en) c.nameEn = en; return c; };
+                const SCr = schedSet(r.scheduleSet || 'regular');
+                SCr[r.classA][r.dayA][r.pA] = mk(r.subA, r.teacherA);
+                SCr[r.classB][r.dayB][r.pB] = mk(r.subB, r.teacherB);
+                reverted = true;
+            }
+            swapRecords = swapRecords.filter(x => x.id !== r.id);
+            saveData();
+            renderSwapRecords();
+            renderClassSchedule(currentClassId);
+            renderFreeMatrix();
+            closeDeleteSwapModal();
+            showToast(reverted ? "已刪除調課紀錄，課表已還原為調課前" : "已刪除調課紀錄（課表維持不變）", "alert");
+        }
+
+        function handleSwapSubmit(e) {
+            e.preventDefault();
+            const teacherA = document.getElementById('swapTeacherA').value;
+            const slotAVal = document.getElementById('swapSlotA').value;
+            const teacherB = document.getElementById('swapTeacherB').value;
+            const slotBVal = document.getElementById('swapSlotB').value;
+            const reason = document.getElementById('swapReason').value;
+
+            if (!slotAVal || !slotBVal) {
+                showToast("請完整選擇兩位教師要對調的時段", "alert");
+                return;
+            }
+
+            const [classA, dayA, pA, subA] = slotAVal.split(',');
+            const [classB, dayB, pB, subB] = slotBVal.split(',');
+
+            const dateA = document.getElementById('swapDateA').value;
+            const dateB = document.getElementById('swapDateB').value;
+            if (!dateA || !dateB || !inSchoolYear(dateA) || !inSchoolYear(dateB)) {
+                showToast("請填寫 115 學年度內的調課日期", "alert");
+                return;
+            }
+            if (dayOfDate(dateA) !== parseInt(dayA) || dayOfDate(dateB) !== parseInt(dayB)) {
+                showToast(`日期與時段星期不符：A 應為週${WEEKDAY_ZH[dayA]}、B 應為週${WEEKDAY_ZH[dayB]}`, "alert");
+                return;
+            }
+
+            const setKey = swapSetKey();
+            if (setKey === 'swim' && swimWeeks.length === 0) {
+                showToast("尚未設定游泳週日期，請先於課表頁「🏊 游泳週設定」新增", "alert");
+                return;
+            }
+            if (isSwimDate(dateA) !== (setKey === 'swim') || isSwimDate(dateB) !== (setKey === 'swim')) {
+                showToast(`所選日期不屬於${setKey === 'swim' ? '游泳週' : '一般週'}，請調整日期或「調課適用課表」`, "alert");
+                return;
+            }
+            const SC = schedSet(setKey);
+
+            const busyA = getTeacherScheduleMatrix(teacherA, null, SC);
+            const busyB = getTeacherScheduleMatrix(teacherB, null, SC);
+
+            const conflictA = busyA[dayB][pB] && !(dayA === dayB && pA === pB);
+            const conflictB = busyB[dayA][pA] && !(dayA === dayB && pA === pB);
+
+            let checkStatus = "✅ 檢核無衝堂";
+            if (conflictA || conflictB) {
+                checkStatus = "⚠️ 警告：調課後可能存有授課重疊！";
+            }
+
+            // Swap logic
+            SC[classA][dayA][pA] = { name: subB, teacher: teacherB };
+            SC[classB][dayB][pB] = { name: subA, teacher: teacherA };
+
+            const record = {
+                id: Date.now(),
+                teacherA, classA, dayA, pA, subA, dateA,
+                teacherB, classB, dayB, pB, subB, dateB,
+                reason,
+                checkStatus,
+                scheduleSet: setKey
+            };
+
+            swapRecords.unshift(record);
+            saveData();
+            renderSwapRecords();
+            renderClassSchedule(currentClassId);
+            renderFreeMatrix();
+
+            showToast(`調課申請成功 (${checkStatus})`);
+            document.getElementById('swapForm').reset();
+        }
+
+        function renderSwapRecords() {
+            const tbody = document.getElementById('swapRecordList');
+            document.getElementById('swapRecordCount').innerText = `共 ${swapRecords.length} 筆`;
+            tbody.innerHTML = '';
+
+            if (swapRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">目前尚無調課申請紀錄</td></tr>`;
+                return;
+            }
+
+            swapRecords.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3"><strong>${r.teacherA}</strong><br><span class="text-slate-500">${r.dateA ? `<span class="font-mono">${fmtDate(r.dateA)}</span> ` : ''}${r.classA} 週${r.dayA}${periodLabel(r.pA)} (${r.subA})</span></td>
+                    <td class="p-3"><strong>${r.teacherB}</strong><br><span class="text-slate-500">${r.dateB ? `<span class="font-mono">${fmtDate(r.dateB)}</span> ` : ''}${r.classB} 週${r.dayB}${periodLabel(r.pB)} (${r.subB})</span></td>
+                    <td class="p-3 text-slate-600">${r.reason}${r.scheduleSet === 'swim' ? '<div class="text-[10px] font-bold text-cyan-700">🏊 游泳週課表</div>' : ''}</td>
+                    <td class="p-3 text-center"><span class="bg-emerald-100 text-emerald-800 text-[10px] px-2.5 py-1 rounded-full font-bold">${r.checkStatus}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="printSwapForm(${r.id})" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 px-2.5 py-1 rounded-lg font-semibold transition">
+                            🖨️ 調課單
+                        </button>
+                        <button onclick="askDeleteSwap(${r.id})" class="admin-only text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 px-2 py-1 rounded-lg font-semibold transition ml-1">
+                            刪除
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function printSwapForm(id) {
+            const rec = swapRecords.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('printFormTitle').innerText = "教師課務對調 (調課) 申請單";
+            document.getElementById('printFormContent').innerHTML = `
+                <div class="border p-4 rounded-lg bg-gray-50 space-y-3 text-xs">
+                    <div class="font-bold border-b pb-2 text-sm">【調課明細對照】</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><strong>申請教師 A：</strong> ${rec.teacherA} 老師</div>
+                        <div><strong>對調教師 B：</strong> ${rec.teacherB} 老師</div>
+                        <div><strong>原授課時段：</strong> ${rec.dateA ? fmtDate(rec.dateA) + ' ' : ''}${rec.classA} 週${rec.dayA} ${periodLabel(rec.pA)} (${rec.subA})</div>
+                        <div><strong>對調時段：</strong> ${rec.dateB ? fmtDate(rec.dateB) + ' ' : ''}${rec.classB} 週${rec.dayB} ${periodLabel(rec.pB)} (${rec.subB})</div>
+                    </div>
+                    <div class="pt-2 border-t"><strong>調課事由：</strong> ${rec.reason}</div>
+                    <div><strong>適用課表：</strong> ${rec.scheduleSet === 'swim' ? '游泳週課表' : '一般週課表'}</div>
+                    <div><strong>填單日期：</strong> ${fmtDate(toISO(new Date()))}</div>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">請兩位授課教師核章後送交教務處教學組備查，並自動同步更新全校電子課表。</p>
+            `;
+
+            window.print();
+        }
+
+
+        // ===================== Excel 匯出（依月份統計）=====================
+        const NO_DATE_KEY = 'nodate';
+        const monthKeyOf = d => d ? d.slice(0, 7) : NO_DATE_KEY;
+        const monthLabel = k => k === NO_DATE_KEY ? '未登錄日期(舊紀錄)' : `${k.slice(0, 4)}年${k.slice(5)}月`;
+        const sortMonthKeys = keys => keys.slice().sort((a, b) => a === NO_DATE_KEY ? 1 : b === NO_DATE_KEY ? -1 : a.localeCompare(b));
+        const periodTimeText = p => { const x = PERIOD_TIMES.find(t => String(t.period) === String(p)); return x ? x.time : ''; };
+        const regTimeText = id => {
+            if (!id || id < 1e12) return '';
+            const d = new Date(id);
+            return `${d.getFullYear()}/${pad2(d.getMonth() + 1)}/${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+        };
+        const weekdayText = (date, fallbackDay) => date ? `週${WEEKDAY_ZH[parseISO(date).getDay()]}` : (fallbackDay ? `週${WEEKDAY_ZH[fallbackDay]}` : '');
+
+        // 代課紀錄對應的班級/科目（優先用登記當下儲存的值，舊紀錄則依目前課表推算）
+        function subClassInfo(r) {
+            if (r.classInfo) return r.classInfo;
+            const hits = [];
+            const SC = schedFor(r.date);
+            Object.keys(SC).forEach(c => {
+                const cell = SC[c][r.day] && SC[c][r.day][r.period];
+                if (cell && cell.teacher === r.teacher) hits.push({ cls: c, subject: String(cell.name || '').replace(/^★/, '') });
+            });
+            return { cls: hits.map(h => h.cls).join('、'), subject: [...new Set(hits.map(h => h.subject))].join('、') };
+        }
+
+        // 依「教師 × 月份」製作統計矩陣
+        function buildMatrixSheet(name, title, entries, monthKeys) {
+            // entries: [{teacher, month}]
+            const teachers = [...new Set(entries.map(e => e.teacher))].sort((a, b) => a.localeCompare(b, 'zh-Hant'));
+            const rows = [[title], [], ['教師', ...monthKeys.map(monthLabel), '合計']];
+            teachers.forEach(t => {
+                const counts = monthKeys.map(m => entries.filter(e => e.teacher === t && e.month === m).length);
+                rows.push([t, ...counts, counts.reduce((a, b) => a + b, 0)]);
+            });
+            const totals = monthKeys.map(m => entries.filter(e => e.month === m).length);
+            rows.push(['合計', ...totals, totals.reduce((a, b) => a + b, 0)]);
+            return { name, rows, widths: [14, ...monthKeys.map(() => 14), 10] };
+        }
+
+        function downloadWorkbook(sheets, filename) {
+            if (typeof XLSX === 'undefined') {
+                showToast("Excel 匯出元件載入失敗，請確認網路連線後重新整理頁面", "alert");
+                return;
+            }
+            const wb = XLSX.utils.book_new();
+            const used = new Set();
+            sheets.forEach(sh => {
+                let nm = sh.name.replace(/[\[\]\:\*\?\/\\]/g, '').slice(0, 31) || 'Sheet';
+                let n = 2; while (used.has(nm)) nm = nm.slice(0, 28) + '_' + (n++);
+                used.add(nm);
+                const ws = XLSX.utils.aoa_to_sheet(sh.rows);
+                ws['!cols'] = sh.widths.map(w => ({ wch: w }));
+                XLSX.utils.book_append_sheet(wb, ws, nm);
+            });
+            XLSX.writeFile(wb, filename);
+            showToast(`Excel 已開始下載：${filename}`);
+        }
+
+        function buildSubWorkbookSheets() {
+            const recs = subRecords.map(r => ({ r, month: monthKeyOf(r.date), info: subClassInfo(r) }));
+            const monthKeys = sortMonthKeys([...new Set(recs.map(x => x.month))]);
+            const sheets = [];
+
+            // 1) 月份統計總表
+            const sum = [['臺中市潭子區新興國小 115 學年度 代課明細 — 月份統計'], [`產製日期：${fmtDate(toISO(new Date()))}`], [],
+                ['月份', '代課節數', '請假教師人數', '代課教師人數', '涉及班級數']];
+            const tot = { n: 0 };
+            monthKeys.forEach(m => {
+                const g = recs.filter(x => x.month === m);
+                const classes = new Set(); g.forEach(x => String(x.info.cls || '').split('、').filter(Boolean).forEach(c => classes.add(c)));
+                sum.push([monthLabel(m), g.length, new Set(g.map(x => x.r.teacher)).size, new Set(g.map(x => x.r.subTeacher)).size, classes.size]);
+                tot.n += g.length;
+            });
+            sum.push(['合計', tot.n, new Set(recs.map(x => x.r.teacher)).size, new Set(recs.map(x => x.r.subTeacher)).size, '']);
+            sheets.push({ name: '月份統計', rows: sum, widths: [20, 12, 14, 14, 12] });
+
+            // 2) 代課教師 / 請假教師 × 月份
+            sheets.push(buildMatrixSheet('代課教師統計', '各教師代課節數（依月份）', recs.map(x => ({ teacher: subLabel(x.r), month: x.month })), monthKeys));
+            sheets.push(buildMatrixSheet('請假教師統計', '各教師被代課（請假）節數（依月份）', recs.map(x => ({ teacher: x.r.teacher, month: x.month })), monthKeys));
+
+            // 3) 每月明細
+            monthKeys.forEach(m => {
+                const g = recs.filter(x => x.month === m).sort((a, b) =>
+                    (a.r.date || '').localeCompare(b.r.date || '') || (parseInt(a.r.period) - parseInt(b.r.period)));
+                const rows = [[`${monthLabel(m)} 代課明細`], [],
+                    ['日期', '星期', '節次', '時間', '班級', '科目', '請假教師', '代課教師', '代課人員類別', '假別事由', '登記時間']];
+                g.forEach(x => rows.push([
+                    x.r.date ? fmtDate(x.r.date) : '(未登錄)', weekdayText(x.r.date, x.r.day), periodLabel(x.r.period), periodTimeText(x.r.period),
+                    x.info.cls || '', x.info.subject || '', x.r.teacher, x.r.subTeacher, x.r.subExternal ? '臨時校外' : '校內', x.r.reason || '', regTimeText(x.r.id)
+                ]));
+                rows.push([]);
+                rows.push([`本月合計：${g.length} 節`]);
+                rows.push(['代課教師', '代課節數']);
+                const byTeacher = {}; g.forEach(x => { const k = subLabel(x.r); byTeacher[k] = (byTeacher[k] || 0) + 1; });
+                Object.keys(byTeacher).sort((a, b) => byTeacher[b] - byTeacher[a] || a.localeCompare(b, 'zh-Hant')).forEach(t => rows.push([t, byTeacher[t]]));
+                sheets.push({ name: monthLabel(m), rows, widths: [14, 8, 10, 16, 12, 16, 12, 12, 12, 24, 18] });
+            });
+            return sheets;
+        }
+
+        function exportSubExcel() {
+            if (subRecords.length === 0) { showToast("目前尚無代課紀錄可匯出", "alert"); return; }
+            downloadWorkbook(buildSubWorkbookSheets(), `新興國小115代課明細_月統計_${toISO(new Date()).replace(/-/g, '')}.xlsx`);
+        }
+
+        function buildSwapWorkbookSheets() {
+            // 以「教師 A 的調課日期」所屬月份歸戶；舊紀錄無日期者歸入「未登錄日期」
+            const recs = swapRecords.map(r => ({ r, month: monthKeyOf(r.dateA || r.dateB) }));
+            const monthKeys = sortMonthKeys([...new Set(recs.map(x => x.month))]);
+            const sheets = [];
+
+            const sum = [['臺中市潭子區新興國小 115 學年度 調課明細 — 月份統計'], [`產製日期：${fmtDate(toISO(new Date()))}`], ['※ 依教師 A 的調課日期歸入月份'], [],
+                ['月份', '調課件數', '涉及教師人數', '涉及班級數']];
+            monthKeys.forEach(m => {
+                const g = recs.filter(x => x.month === m);
+                sum.push([monthLabel(m), g.length,
+                    new Set(g.flatMap(x => [x.r.teacherA, x.r.teacherB])).size,
+                    new Set(g.flatMap(x => [x.r.classA, x.r.classB])).size]);
+            });
+            sum.push(['合計', recs.length, new Set(recs.flatMap(x => [x.r.teacherA, x.r.teacherB])).size, new Set(recs.flatMap(x => [x.r.classA, x.r.classB])).size]);
+            sheets.push({ name: '月份統計', rows: sum, widths: [20, 12, 14, 12] });
+
+            // 教師 × 月份：每位教師每件調課只算一次（不論擔任 A 或 B）
+            const entries = [];
+            recs.forEach(x => { new Set([x.r.teacherA, x.r.teacherB]).forEach(t => entries.push({ teacher: t, month: x.month })); });
+            sheets.push(buildMatrixSheet('教師調課統計', '各教師涉及調課件數（依月份）', entries, monthKeys));
+
+            monthKeys.forEach(m => {
+                const g = recs.filter(x => x.month === m).sort((a, b) => (a.r.dateA || '').localeCompare(b.r.dateA || '') || a.r.id - b.r.id);
+                const rows = [[`${monthLabel(m)} 調課明細`], [],
+                    ['序號', '申請教師 A', 'A 日期', 'A 星期', 'A 班級', 'A 節次', 'A 科目', '對調教師 B', 'B 日期', 'B 星期', 'B 班級', 'B 節次', 'B 科目', '調課事由', '檢核狀態', '適用課表', '登記時間']];
+                g.forEach((x, i) => {
+                    const r = x.r;
+                    rows.push([i + 1, r.teacherA, r.dateA ? fmtDate(r.dateA) : '(未登錄)', weekdayText(r.dateA, r.dayA), r.classA, periodLabel(r.pA), String(r.subA || '').replace(/^★/, ''),
+                        r.teacherB, r.dateB ? fmtDate(r.dateB) : '(未登錄)', weekdayText(r.dateB, r.dayB), r.classB, periodLabel(r.pB), String(r.subB || '').replace(/^★/, ''),
+                        r.reason || '', r.checkStatus || '', r.scheduleSet === 'swim' ? '游泳週' : '一般週', regTimeText(r.id)]);
+                });
+                rows.push([]);
+                rows.push([`本月合計：${g.length} 件`]);
+                sheets.push({ name: monthLabel(m), rows, widths: [6, 12, 12, 8, 8, 10, 14, 12, 12, 8, 8, 10, 14, 24, 14, 10, 18] });
+            });
+            return sheets;
+        }
+
+        function exportSwapExcel() {
+            if (swapRecords.length === 0) { showToast("目前尚無調課紀錄可匯出", "alert"); return; }
+            downloadWorkbook(buildSwapWorkbookSheets(), `新興國小115調課明細_月統計_${toISO(new Date()).replace(/-/g, '')}.xlsx`);
+        }
+
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(buildBackupObject(), null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `新興國小115課表備份_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchorElem.click();
+            showToast("JSON 備份檔已開始下載");
+        }
+
+        function importDataJSON(event) {
+            if (!requireAdmin('匯入備份資料')) { event.target.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.schedules) ALL_SCHEDULES = stripFixedMorning(parsed.schedules);
+                    if (parsed.swimSchedules) ALL_SWIM_SCHEDULES = stripFixedMorning(parsed.swimSchedules);
+                    if (Array.isArray(parsed.swimWeeks)) swimWeeks = parsed.swimWeeks;
+                    if (parsed.subRecords) subRecords = parsed.subRecords;
+                    if (parsed.swapRecords) swapRecords = parsed.swapRecords;
+
+                    saveData();
+                    renderClassSchedule(currentClassId);
+                    renderFreeMatrix();
+                    renderSubRecords();
+                    renderSwapRecords();
+                    showToast("備份資料匯入成功！");
+                } catch (err) {
+                    showToast("匯入失敗，JSON 格式無效", "alert");
+                }
+            };
+            if (event.target.files[0]) reader.readAsText(event.target.files[0]);
+        }
+
+        function resetToDefaultData() {
+            if (!requireAdmin('重置為官方標準課表')) return;
+            if (confirm("確定要將所有課表、代課與調課紀錄恢復為 115 學年度官方標準課表嗎？")) {
+                localStorage.removeItem(STORAGE_KEY);
+                ALL_SCHEDULES = generateDefaultSchedules();
+                ALL_SWIM_SCHEDULES = generateDefaultSwimSchedules();   // 游泳週日期設定(swimWeeks)保留
+                subRecords = [];
+                swapRecords = [];
+                saveData();
+                renderClassSchedule(currentClassId);
+                renderFreeMatrix();
+                renderSubRecords();
+                renderSwapRecords();
+                showToast("已成功載入 115 學年度官方標準課表！");
+            }
+        }
+
+        function updateTimeBadge() {
+            const now = new Date();
+            const days = ["日", "一", "二", "三", "四", "五", "六"];
+            const dayStr = days[now.getDay()];
+            const timeStr = now.toTimeString().substring(0, 5);
+
+            // 依目前時間標示所在節次（含晨間 08:00-08:35）
+            let cur = '';
+            const hit = PERIOD_TIMES.find(pt => {
+                const [a, b] = pt.time.split(' - ');
+                return timeStr >= a && timeStr <= b;
+            });
+            if (hit) cur = ` (${periodLabel(hit.period)})`;
+            document.getElementById('currentPeriodBadge').innerText = `${fmtDate(toISO(now))} 週${dayStr} ${timeStr}${cur}`;
+        }
+
+        window.onload = function() {
+            loadSavedData();
+            renderClassSelector();
+            renderClassSchedule(currentClassId);
+            renderFreeMatrix();
+            populateSubTeacherDropdowns();
+            setDefaultSubDate();
+            updateSubAvailableTeachers();
+            renderSubRecords();
+            renderSwapRecords();
+
+            updateTimeBadge();
+            setInterval(updateTimeBadge, 30000);
+
+            lucide.createIcons();
+            renderFreeMatrix();
+            initRole();
+        };
+    </script>
+</body>
+</html>
